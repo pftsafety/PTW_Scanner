@@ -479,8 +479,33 @@ function lookupManual() {
 // ── 7. Scanned Data Flow ─────────────────────────────────────
 async function onScanned(certNo) {
   stopCamera();
+  
+  // ── JSON EXTRACTION FIX ─────────────────────────────────────
+  let finalCert = certNo.trim();
+  
   try {
-    const rec = await api('getInductionByCert', { certNo });
+    // Check if the scanned string is actually a JSON object
+    if (finalCert.startsWith('{') && finalCert.endsWith('}')) {
+      const parsedData = JSON.parse(finalCert);
+      if (parsedData && parsedData.id) {
+        finalCert = parsedData.id.trim(); // Extract just the ID field
+      }
+    }
+  } catch(jsonErr) {
+    // If it's not valid JSON, treat it as a plain text card string
+    console.log("Plain text card detected, skipping JSON parse");
+  }
+  
+  // Force clean the extracted result string for lookup safety
+  finalCert = finalCert.toLowerCase();
+  // ────────────────────────────────────────────────────────────
+
+  const el = document.getElementById('qr-reader');
+  if (el) el.innerHTML = `<div style="padding:20px;text-align:center"><div class="spinner"></div><div style="margin-top:8px;font-size:12px;color:#64748b">Looking up ${esc(finalCert)}…</div></div>`;
+
+  try {
+    // Send the extracted, clean ID string to the backend API
+    const rec = await api('getInductionByCert', { certNo: finalCert });
     if (!rec) throw new Error('Worker not found in induction database');
     _workerRec = rec;
     document.getElementById('worker-confirm-card').innerHTML = `<div class="wcc-name">${esc(rec.name)}</div><div class="wcc-row">🪪 Cert No: <strong>${esc(rec.certNo)}</strong></div>`;
