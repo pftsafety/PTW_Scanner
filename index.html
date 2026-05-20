@@ -426,7 +426,16 @@ function startCamera() {
     if (typeof Html5Qrcode !== 'undefined') {
       try {
         _qrScanner = new Html5Qrcode('qr-reader');
-        _qrScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 250 }, certNo => { stopCamera(); onScanned(certNo.trim()); }, () => {});
+        _qrScanner.start(
+          { facingMode: 'environment' }, 
+          { fps: 10, qrbox: 250 }, 
+          certNo => { 
+            stopCamera(); 
+            // FIX: Force clean the scanned text here
+            onScanned(certNo.trim().toLowerCase()); 
+          }, 
+          () => {}
+        );
       } catch(e) { console.warn(e); }
     }
   } else {
@@ -454,7 +463,7 @@ function processQRImage(input) {
       canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
       const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
       const code = typeof jsQR === 'function' ? jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' }) : null;
-      if (code && code.data) { input.value = ''; onScanned(code.data.trim()); } 
+      if (code && code.data) { input.value = ''; onScanned(code.data.trim().toLowerCase()); } 
       else { document.getElementById('qr-err-wrap').style.display = 'block'; input.value = ''; }
     };
     img.src = e.target.result;
