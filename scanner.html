@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HLL Scanner">
+<title>HLL PTW Scanner</title>
+<link rel="manifest" href="./manifest.json">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js" crossorigin="anonymous"></script>
+<style>
+/* ══════ HLL PTW SCANNER ══════ */
+:root {
+  --bg1: #0a1628; --bg2: #0f2027; --bg3: #1a0a2e;
+  --blue: #2563eb; --blue-l: #3b82f6; --blue-ll: #60a5fa;
+  --green: #059669; --green-l: #10b981; --green-ll: #34d399;
+  --amber: #d97706; --amber-l: #f59e0b;
+  --red: #dc2626; --red-l: #ef4444;
+  --purple: #7c3aed; --purple-l: #8b5cf6;
+  --text: #f1f5f9; --text-2: #94a3b8; --text-3: #64748b;
+  --border: rgba(255,255,255,.12);
+  --glass: rgba(255,255,255,.07);
+  --glass-2: rgba(255,255,255,.12);
+  --card-bg: #111827;
+  --r: 16px; --r-sm: 10px; --r-lg: 22px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;
+  background:linear-gradient(145deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%);
+  background-attachment:fixed; color:var(--text);
+  min-height:100vh; min-height:100dvh;
+  font-size:16px; line-height:1.5;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 65% 45% at 8% 12%, rgba(37,99,235,.22) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 55% at 92% 85%, rgba(124,58,237,.18) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 100%, rgba(5,150,105,.14) 0%,transparent 55%);
+  animation:bgShift 15s ease-in-out infinite alternate;
+}
+@keyframes bgShift{from{opacity:.8}to{opacity:1;transform:scale(1.04)}}
+.page{max-width:480px;margin:0 auto;padding:0 0 env(safe-area-inset-bottom,28px);position:relative;z-index:1;width:100%}
+
+/* Header */
+.hdr{
+  padding:max(54px,calc(env(safe-area-inset-top)+18px)) 20px 14px;
+  display:flex;align-items:center;gap:14px;
+  background:rgba(10,22,40,.6);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;
+}
+.hdr-logo{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue-l),var(--blue));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:900;color:#fff;letter-spacing:.3px;
+  box-shadow:0 2px 12px rgba(37,99,235,.4);
+}
+.hdr-title{font-size:16px;font-weight:700;color:var(--text);line-height:1.2}
+.hdr-sub{font-size:11px;color:var(--text-3)}
+
+/* Step pills */
+.steps-row{display:flex;gap:5px;padding:10px 16px;background:rgba(10,22,40,.4)}
+.step-pip{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.1);transition:all .35s}
+.step-pip.done{background:var(--green-l)}
+.step-pip.active{background:var(--blue-l);transform:scaleY(1.5)}
+
+/* Install banner */
+.install-banner{
+  margin:10px 14px;padding:14px 16px;border-radius:var(--r);
+  background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(124,58,237,.2));
+  border:1px solid rgba(96,165,250,.3);
+  display:flex;align-items:center;gap:12px;
+  animation:slideDown .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.install-banner-icon{font-size:28px;flex-shrink:0}
+.install-banner-title{font-size:13px;font-weight:700;color:#93c5fd;margin-bottom:2px}
+.install-banner-body{font-size:11px;color:var(--text-2);line-height:1.5}
+.install-btn{
+  margin-left:auto;flex-shrink:0;
+  background:var(--blue-l);color:#fff;border:none;
+  padding:7px 14px;border-radius:var(--r-sm);cursor:pointer;
+  font-size:12px;font-weight:700;white-space:nowrap;
+  box-shadow:0 2px 8px rgba(59,130,246,.35);
+}
+.dismiss-btn{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:4px;flex-shrink:0}
+
+/* Cards */
+.card{
+  background:var(--card-bg);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden;margin:10px 14px;
+  box-shadow:0 4px 24px rgba(0,0,0,.35);
+  animation:cardIn .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.card-header{
+  padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-bottom:1px solid var(--border);
+}
+.card-header-blue{background:linear-gradient(135deg,rgba(37,99,235,.7),rgba(59,130,246,.5))}
+.card-header-green{background:linear-gradient(135deg,rgba(5,150,105,.7),rgba(16,185,129,.5))}
+.card-header-dark{background:rgba(15,23,42,.8)}
+.step-badge{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;
+}
+.card-title{font-size:15px;font-weight:700;color:#fff}
+.back-btn{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  color:#fff;padding:6px 14px;border-radius:99px;cursor:pointer;
+  font-size:12px;font-weight:600;flex-shrink:0;transition:all .15s;
+}
+.back-btn:active{background:rgba(255,255,255,.25);transform:scale(.94)}
+.card-body{padding:16px 18px}
+
+/* Permit items */
+.permit-item{
+  padding:14px;border-radius:var(--r);margin-bottom:8px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  animation:itemIn .3s ease both;
+}
+@keyframes itemIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.permit-item:active{transform:scale(.97);background:rgba(37,99,235,.15);border-color:rgba(59,130,246,.4)}
+.permit-icon{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:rgba(37,99,235,.2);border:1px solid rgba(59,130,246,.25);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+}
+.permit-no{font-size:14px;font-weight:700;color:var(--text)}
+.permit-meta{font-size:12px;color:var(--text-2);margin-top:2px}
+.status-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;display:inline-block;margin-top:4px}
+.permit-arrow{margin-left:auto;color:var(--text-3);font-size:20px}
+
+/* Worker rows */
+.worker-row{
+  display:flex;align-items:center;gap:12px;padding:13px;
+  border-radius:var(--r);margin-bottom:8px;cursor:pointer;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  animation:itemIn .3s ease both;
+}
+.worker-row:active{transform:scale(.97);background:rgba(37,99,235,.15);border-color:rgba(59,130,246,.4)}
+.worker-av{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.worker-name{font-size:15px;font-weight:700;color:var(--text)}
+.worker-meta{font-size:12px;color:var(--text-2);margin-top:1px}
+.acked-pill{margin-left:auto;font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(16,185,129,.15);color:var(--green-l);border:1px solid rgba(16,185,129,.25);flex-shrink:0}
+.pending-pill{margin-left:auto;font-size:12px;color:var(--blue-l);flex-shrink:0;font-weight:600}
+
+/* Action chips */
+.chips-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.action-chip{
+  padding:9px 18px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1.5px solid var(--border);color:var(--text-2);
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+.action-chip.active{
+  background:linear-gradient(135deg,var(--blue-l),var(--blue));
+  border-color:rgba(59,130,246,.5);color:#fff;
+  box-shadow:0 3px 14px rgba(37,99,235,.4);transform:scale(1.04);
+}
+.action-chip:active{transform:scale(.96)}
+
+/* QR reader */
+.qr-wrap{
+  border-radius:var(--r);overflow:hidden;position:relative;
+  border:2px solid rgba(59,130,246,.4);
+  box-shadow:0 0 0 1px rgba(59,130,246,.15),0 8px 32px rgba(0,0,0,.5);
+  min-height:270px;background:#000;
+}
+.qr-corner{position:absolute;width:28px;height:28px;z-index:2;pointer-events:none;border-color:var(--blue-l);border-style:solid}
+.qr-corner.tl{top:10px;left:10px;border-width:3px 0 0 3px;border-radius:6px 0 0 0}
+.qr-corner.tr{top:10px;right:10px;border-width:3px 3px 0 0;border-radius:0 6px 0 0}
+.qr-corner.bl{bottom:10px;left:10px;border-width:0 0 3px 3px;border-radius:0 0 0 6px}
+.qr-corner.br{bottom:10px;right:10px;border-width:0 3px 3px 0;border-radius:0 0 6px 0}
+.qr-scan-line{
+  position:absolute;left:12%;right:12%;height:2px;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--blue-l),var(--green-l),var(--blue-l),transparent);
+  animation:scanLine 2.5s ease-in-out infinite;
+  box-shadow:0 0 8px rgba(59,130,246,.6);
+}
+@keyframes scanLine{0%{top:8%;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:90%;opacity:0}}
+#qr-reader{width:100%;min-height:270px}
+
+/* Info row */
+.info-row{
+  padding:11px 14px;border-radius:var(--r-sm);margin-bottom:12px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+}
+.info-label{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
+.info-val{font-size:14px;font-weight:700;color:var(--text);margin-top:2px}
+.section-label{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+
+/* Confirm card */
+.confirm-card{border-radius:var(--r);padding:16px;margin-bottom:14px;background:rgba(255,255,255,.06);border:1px solid var(--border);animation:cardIn .35s ease both}
+.confirm-name{font-size:20px;font-weight:800;color:var(--text);margin-bottom:6px}
+.confirm-row{font-size:13px;color:var(--text-2);margin-top:4px;display:flex;align-items:center;gap:6px}
+.valid-badge{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 13px;border-radius:99px;font-size:12px;font-weight:700;background:rgba(5,150,105,.15);color:var(--green-l);border:1px solid rgba(16,185,129,.3)}
+.expired-badge{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 13px;border-radius:99px;font-size:12px;font-weight:700;background:rgba(220,38,38,.15);color:var(--red-l);border:1px solid rgba(239,68,68,.3)}
+
+/* Exec ack */
+.exec-ack-wrap{display:none;margin-bottom:14px;padding:14px;border-radius:var(--r);background:rgba(5,150,105,.1);border:1.5px solid rgba(16,185,129,.3);animation:cardIn .3s ease both}
+.exec-ack-label{cursor:pointer;display:flex;align-items:flex-start;gap:10px}
+.exec-ack-title{font-size:13px;font-weight:700;color:var(--green-l);margin-bottom:3px}
+.exec-ack-body{font-size:12px;color:var(--text-2);line-height:1.6}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px}
+.btn{
+  padding:14px 18px;border-radius:var(--r);font-size:15px;font-weight:700;
+  cursor:pointer;border:none;transition:all .18s cubic-bezier(.34,1.56,.64,1);
+  font-family:inherit;min-height:50px;
+}
+.btn:active{transform:scale(.96)}
+.btn-primary{flex:2;background:linear-gradient(135deg,var(--blue-l),var(--blue));color:#fff;box-shadow:0 4px 16px rgba(37,99,235,.4),inset 0 1px 0 rgba(255,255,255,.15)}
+.btn-primary:active{box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.btn-ghost{flex:1;background:rgba(255,255,255,.08);color:var(--text-2);border:1px solid var(--border)}
+.btn-green{width:100%;background:linear-gradient(135deg,var(--green-l),var(--green));color:#fff;box-shadow:0 4px 16px rgba(5,150,105,.35),inset 0 1px 0 rgba(255,255,255,.15);margin-top:4px}
+
+/* Success */
+.success-wrap{
+  display:none;text-align:center;padding:32px 24px 24px;margin:10px 14px;
+  border-radius:var(--r-lg);background:rgba(5,150,105,.1);
+  border:1px solid rgba(16,185,129,.3);
+  box-shadow:0 12px 40px rgba(0,0,0,.35);
+  animation:successIn .5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes successIn{from{opacity:0;transform:scale(.85) translateY(16px)}to{opacity:1;transform:none}}
+.success-icon-wrap{font-size:62px;margin-bottom:10px;display:block;animation:iconBounce .6s cubic-bezier(.34,1.56,.64,1) .15s both}
+@keyframes iconBounce{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+.success-title{font-size:22px;font-weight:800;color:var(--green-l);margin-bottom:4px}
+.success-sub{font-size:13px;color:var(--text-2);margin-bottom:12px}
+.success-progress{font-size:13px;font-weight:700;padding:8px 16px;background:rgba(37,99,235,.15);border:1px solid rgba(59,130,246,.25);border-radius:var(--r-sm);margin-bottom:16px;display:inline-block;color:var(--blue-ll)}
+
+/* Loader */
+.spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.1);border-top-color:var(--blue-l);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(5,12,28,.75);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-overlay.show{display:flex}
+.loading-text{color:var(--text-2);font-size:14px;font-weight:600}
+
+/* Error */
+.err-box{display:none;padding:11px 14px;border-radius:var(--r-sm);margin-top:8px;background:rgba(220,38,38,.12);border:1px solid rgba(239,68,68,.3);color:var(--red-l);font-size:13px;font-weight:600;animation:shake .4s ease both}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+/* File capture button */
+.capture-label{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:22px;background:rgba(37,99,235,.15);
+  border:2px dashed rgba(59,130,246,.4);color:var(--text);
+  border-radius:var(--r);cursor:pointer;font-size:16px;font-weight:700;
+  width:100%;margin-bottom:12px;transition:all .18s;
+  box-shadow:0 4px 16px rgba(37,99,235,.15);
+}
+.capture-label:active{background:rgba(37,99,235,.25);transform:scale(.98)}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loader-text">Loading…</div>
+</div>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-logo">HLL</div>
+  <div>
+    <div class="hdr-title">Job Performer Scanner</div>
+    <div class="hdr-sub">HLL Lifecare Ltd. — Peroorkada Factory</div>
+  </div>
+</div>
+
+<!-- Step progress pills -->
+<div class="steps-row">
+  <div class="step-pip active" id="pip1"></div>
+  <div class="step-pip" id="pip2"></div>
+  <div class="step-pip" id="pip3"></div>
+  <div class="step-pip" id="pip4"></div>
+</div>
+
+<!-- Install PWA banner (shown only when not installed) -->
+<div class="install-banner" id="install-banner" style="display:none">
+  <div class="install-banner-icon">📲</div>
+  <div style="flex:1;min-width:0">
+    <div class="install-banner-title">Install Scanner App</div>
+    <div class="install-banner-body">Add to Home Screen for instant camera access — no browser needed.</div>
+  </div>
+  <button class="install-btn" id="install-btn" onclick="triggerInstall()">Install</button>
+  <button class="dismiss-btn" onclick="dismissInstall()">✕</button>
+</div>
+
+<div class="page">
+
+  <!-- ── STEP 1: SELECT PERMIT ── -->
+  <div id="step1" class="card glass">
+    <div class="card-header card-header-dark">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="step-badge">1</div>
+        <span class="card-title">Select Permit</span>
+      </div>
+      <button class="back-btn" onclick="loadPermitList()">🔄</button>
+    </div>
+    <div class="card-body">
+      <!-- Manual permit number search -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1;display:flex;align-items:center;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+          <span style="padding:0 10px;font-size:15px;color:var(--text-3)">🔍</span>
+          <input type="text" id="permit-search-input" placeholder="Enter permit no. e.g. PTW-2026-0001"
+            style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;padding:11px 8px 11px 0;font-family:inherit"
+            oninput="this.value=this.value.toUpperCase()"
+            onkeydown="if(event.key==='Enter')searchPermitDirect()">
+        </div>
+        <button onclick="searchPermitDirect()" style="background:var(--blue-l);color:#fff;border:none;padding:11px 16px;border-radius:var(--r-sm);cursor:pointer;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px rgba(59,130,246,.35)">Go →</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11px;color:var(--text-3);font-weight:600">OR SELECT FROM LIST</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <div id="permit-list-area">
+        <div style="padding:24px;text-align:center">
+          <div class="spinner" style="margin:0 auto 12px"></div>
+          <div style="font-size:13px;color:var(--text-2)">Loading active permits…</div>
+        </div>
+      </div>
+      <div id="err1" class="err-box"></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: SELECT ACTION & WORKER ── -->
+  <div id="step2" class="card glass" style="display:none">
+    <div class="card-header card-header-blue">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="step-badge">2</div>
+        <span class="card-title" id="step2-title">Select Worker</span>
+      </div>
+      <button class="back-btn" onclick="goStep(1)">← Back</button>
+    </div>
+    <div class="card-body">
+      <div id="permit-info" class="info-row" style="margin-bottom:12px"></div>
+      <div class="section-label">Action</div>
+      <div class="chips-row" id="action-chips"></div>
+      <div class="section-label">Tap worker to scan their QR</div>
+      <div id="worker-list"></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: SCAN QR ── -->
+  <div id="step3" class="card glass" style="display:none">
+    <div class="card-header card-header-blue">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="step-badge">3</div>
+        <span class="card-title" id="step3-title">Scan Worker QR</span>
+      </div>
+      <button class="back-btn" onclick="goStep(2)">← Back</button>
+    </div>
+    <div class="card-body">
+      <div id="current-worker-label" class="info-row" style="margin-bottom:14px"></div>
+
+      <!-- Live camera (standalone/installed) -->
+      <div id="scan-live-wrap" style="display:none">
+        <div class="qr-wrap scan-ready-pulse" id="qr-wrap">
+          <div class="qr-corner tl"></div>
+          <div class="qr-corner tr"></div>
+          <div class="qr-corner bl"></div>
+          <div class="qr-corner br"></div>
+          <div class="qr-scan-line"></div>
+          <div id="qr-reader"></div>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,.45);text-align:center;margin-top:8px">📷 Keep the QR centred in the frame</p>
+      </div>
+
+      <!-- File/capture fallback -->
+      <div id="scan-file-wrap" style="display:none">
+        <input type="file" id="qr-file-input" accept="image/*" capture="environment" style="display:none" onchange="processQRImage(this)">
+        <label for="qr-file-input" style="display:flex;align-items:center;justify-content:center;gap:14px;padding:22px;background:linear-gradient(135deg,rgba(79,142,247,.3),rgba(37,99,235,.4));border:1.5px solid rgba(79,142,247,.4);color:#fff;border-radius:16px;cursor:pointer;font-size:16px;font-weight:700;width:100%;margin-bottom:12px;box-shadow:0 4px 16px rgba(79,142,247,.25)">
+          <span style="font-size:32px">📷</span><span>Open Camera &amp; Scan QR</span>
+        </label>
+        <div id="qr-preview-wrap" style="display:none;margin-bottom:12px;text-align:center">
+          <img id="qr-preview-img" alt="" style="max-width:100%;max-height:160px;border-radius:12px;border:1px solid rgba(255,255,255,.2);margin-bottom:8px;display:block;margin:0 auto 8px">
+          <div id="qr-decode-status" style="font-size:13px;font-weight:700;color:rgba(255,255,255,.7)"></div>
+          <div id="qr-err-wrap" style="display:none;padding:8px;background:rgba(239,68,68,.15);border-radius:8px;margin-top:6px">
+            <div style="font-size:12px;color:#f87171;font-weight:700;margin-bottom:6px">❌ QR not detected. Try again.</div>
+            <label for="qr-file-input" style="font-size:12px;color:#4f8ef7;cursor:pointer;font-weight:700">📷 Retake photo</label>
+          </div>
+        </div>
+      </div>
+      <div id="err3" class="err-box"></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: CONFIRM ── -->
+  <div id="step4" class="card glass" style="display:none">
+    <div class="card-header card-header-green">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="step-badge">4</div>
+        <span class="card-title">Confirm & Record</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="worker-confirm-card" class="confirm-card"></div>
+      <div class="exec-ack-wrap" id="exec-ack">
+        <label class="exec-ack-label">
+          <input type="checkbox" id="exec-check" style="width:18px;height:18px;accent-color:#22d3a0;flex-shrink:0;margin-top:2px">
+          <div>
+            <div class="exec-ack-title">Work Execution Team Confirmation *</div>
+            <div class="exec-ack-body">The successive steps of the work, the potential hazards and the safety precautions have been explained and understood.</div>
+          </div>
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(3)">← Rescan</button>
+        <button class="btn btn-primary" onclick="confirmScan()">✓ Record Sign</button>
+      </div>
+      <div id="err4" class="err-box"></div>
+    </div>
+  </div>
+
+  <!-- ── SUCCESS ── -->
+  <div class="success-wrap" id="success-card">
+    <span class="success-icon-wrap">✅</span>
+    <div class="success-title" id="suc-title">Recorded!</div>
+    <div class="success-sub" id="suc-sub"></div>
+    <div class="success-progress" id="suc-progress" style="display:none"></div>
+    <button class="btn btn-green" onclick="resetToStep2()" style="margin-top:4px">Scan Next Worker →</button>
+  </div>
+
+</div><!-- .page -->
+
+<script>
+// ════════════════════════════════════════════════════════════
+// HLL PTW SCANNER — iOS Liquid Glass
+// ════════════════════════════════════════════════════════════
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyStRE8Z4FP9E2Vk23FwKj0x_z_h-E7GBjq9zqOmGg81lzjqNO7-ZO5Y0JsJwsf17qh/exec';
+const params     = new URLSearchParams(window.location.search);
+const INIT_PERMIT_NO = (params.get('permit') || params.get('permitNo') || '').trim().toUpperCase();
+const INIT_ENTRY_ID  = params.get('entryId') || '';
+const _isDailyMode   = !!(params.get('daily') || INIT_ENTRY_ID);
+
+let _permit = null, _action = 'Acknowledgement', _workerRec = null, _targetWorker = null;
+let _qrScanner = null;
+
+// ── Utilities ─────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showErr(id, msg) { const el=document.getElementById(id); if(el){ el.textContent=msg; el.style.display='block'; el.style.animation='none'; requestAnimationFrame(()=>el.style.animation=''); } }
+function hideErr(id) { const el=document.getElementById(id); if(el) el.style.display='none'; }
+function load(on, txt) { const el=document.getElementById('loader'); if(el) el.classList.toggle('show',on); const tEl=document.getElementById('loader-text'); if(tEl) tEl.textContent=txt||'Loading…'; }
+
+// ── API ────────────────────────────────────────────────────
+async function api(action, payload={}) {
+  const body = JSON.stringify({ action, payload, sessionToken:'' });
+  const resp = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body });
+  if (!resp.ok) throw new Error('Server error '+resp.status);
+  const json = await resp.json();
+  if (!json.ok) throw new Error(json.error || 'Unknown error');
+  return json.result !== undefined ? json.result : json.data;
+}
+
+// ── Step navigation ────────────────────────────────────────
+function goStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('step'+i);
+    if(el) el.style.display = (i===n) ? 'block' : 'none';
+    const pip = document.getElementById('pip'+i);
+    if(pip) pip.className = 'step-pip' + (i<n?' done':i===n?' active':'');
+  });
+  document.getElementById('success-card').style.display = 'none';
+  if (n===3) startCamera();
+  else stopCamera();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── Permit list ────────────────────────────────────────────
+
+async function searchPermitDirect() {
+  const input = document.getElementById('permit-search-input');
+  let no = (input ? input.value : '').trim().toUpperCase();
+  if (!no) { showErr('err1','Enter a permit number.'); return; }
+  // Auto-format: if just numbers, prefix with current year
+  if (/^\d+$/.test(no)) {
+    no = 'PTW-' + new Date().getFullYear() + '-' + no.padStart(4,'0');
+    if (input) input.value = no;
+  }
+  // Auto-add PTW- prefix if missing
+  if (!/^PTW-/.test(no)) no = 'PTW-' + no;
+  hideErr('err1');
+  load(true,'Loading permit…');
+  try {
+    const p = await api('getPermitByNo', { permitNo: no });
+    load(false);
+    if (!p) { showErr('err1','Permit "'+no+'" not found.'); return; }
+    selectPermit(p);
+  } catch(e) { load(false); showErr('err1', e.message); }
+}
+
+async function loadPermitList() {
+  const el = document.getElementById('permit-list-area');
+  el.innerHTML = '<div style="padding:24px;text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><div style="font-size:13px;color:rgba(255,255,255,.5)">Loading permits…</div></div>';
+  hideErr('err1');
+  try {
+    const permits = await api('getActivePermits');
+    if (!permits || !permits.length) {
+      el.innerHTML = '<div style="padding:24px;text-align:center;font-size:13px;color:rgba(255,255,255,.4)">No active permits found.</div>'; return;
+    }
+    const statusColors = { Active:'#22d3a0', 'Pending Worker Acknowledgement':'#fbbf24', 'Pending Acceptor':'#a78bfa', 'Pending Safety':'#60a5fa' };
+    el.innerHTML = permits.map((p,i) => `
+      <div class="permit-item" style="animation-delay:${i*0.05}s" onclick="selectPermit(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+        <div class="permit-icon">📋</div>
+        <div style="flex:1;min-width:0">
+          <div class="permit-no">${esc(p.permitNo)}</div>
+          <div class="permit-meta">📍 ${esc((p.workArea||'').slice(0,35))} · ${esc(p.type||'')}</div>
+          <span class="status-pill" style="background:${statusColors[p.status]||'rgba(255,255,255,.15)'}22;color:${statusColors[p.status]||'rgba(255,255,255,.6)'};border:1px solid ${statusColors[p.status]||'rgba(255,255,255,.2)'}44">${esc(p.status)}</span>
+        </div>
+        <div class="permit-arrow">›</div>
+      </div>`).join('');
+  } catch(e) { showErr('err1', e.message); el.innerHTML=''; }
+}
+
+function selectPermit(p) {
+  // Haptic feedback
+  if (navigator.vibrate) navigator.vibrate(8);
+  _permit = typeof p==='string' ? JSON.parse(p) : p;
+  renderStep2();
+  goStep(2);
+}
+
+// ── Worker list ────────────────────────────────────────────
+function renderStep2() {
+  const p = _permit; if(!p) return;
+  const ex = p.extras || {};
+  document.getElementById('step2-title').textContent = _isDailyMode ? 'Daily Worker Ack' : 'Select Worker';
+
+  // Permit info
+  document.getElementById('permit-info').innerHTML = `
+    <div class="info-label">Permit</div>
+    <div class="info-val">${esc(p.permitNo)} — ${esc(p.type||'')} · ${esc(p.status||'')}</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">📍 ${esc(p.workArea||'—')}</div>`;
+
+  // Action chips
+  let actions = [{ id:'Acknowledgement', label:'✍ Acknowledgement' }];
+  if (!_isDailyMode) {
+    if (p.status==='Active' && !p.jobStartTime) actions.push({ id:'Start', label:'▶ Work Start' });
+    if (p.status==='Active' && p.jobStartTime && !p.jobStopTime) actions.push({ id:'Stop', label:'⏹ Work Stop' });
+    if (p.status==='Pending Closure') actions.push({ id:'Closure', label:'🔏 Closure' });
+  }
+  _action = actions[0].id;
+  document.getElementById('action-chips').innerHTML = actions.map(a =>
+    `<button class="action-chip${a.id===_action?' active':''}" onclick="setAction('${a.id}',this)">${esc(a.label)}</button>`
+  ).join('');
+
+  renderWorkerList();
+}
+
+function setAction(id, btn) {
+  if (navigator.vibrate) navigator.vibrate(6);
+  _action = id;
+  document.querySelectorAll('.action-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderWorkerList();
+}
+
+function renderWorkerList() {
+  const el = document.getElementById('worker-list');
+  const ex = (_permit||{}).extras || {};
+  let workers = [];
+  if (_isDailyMode) {
+    const entry = (ex.dailyEntries||[]).find(e => e.entryId === INIT_ENTRY_ID);
+    workers = entry ? entry.workers : [];
+  } else {
+    workers = (ex.workEntries||[]).flatMap(e => e.workers||[]);
+    if (!workers.length) workers = ex.workers||[];
+  }
+  if (!workers.length) { el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;padding:16px">No workers found in this permit.</div>'; return; }
+
+  const colors = ['#4f8ef7','#a78bfa','#22d3a0','#fbbf24','#f87171','#60a5fa'];
+  el.innerHTML = workers.map((w,i) => {
+    const acked = _isDailyMode ? w.acked : (ex.ackedWorkers||[]).includes(w.certNo||w.name);
+    return `<div class="worker-row" style="animation-delay:${i*.06}s" onclick="selectWorker(${i})">
+      <div class="worker-av" style="background:${colors[i%colors.length]}">${(w.name||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div class="worker-name">${esc(w.name)}</div>
+        <div class="worker-meta">${esc(w.company||w.contractor||'—')} · ${esc(w.certNo||'—')}</div>
+      </div>
+      ${acked ? '<span class="acked-pill">✓ Acked</span>' : '<span class="pending-pill">Tap to scan ›</span>'}
+    </div>`;
+  }).join('');
+  el._workers = workers;
+}
+
+function selectWorker(idx) {
+  if (navigator.vibrate) navigator.vibrate([8,30,8]);
+  _targetWorker = document.getElementById('worker-list')._workers[idx];
+  document.getElementById('step3-title').textContent = 'Scan: '+(_targetWorker.name||'Worker');
+  document.getElementById('current-worker-label').innerHTML = `
+    <div class="info-label">Scanning for</div>
+    <div class="info-val">👤 ${esc(_targetWorker.name)} · ${esc(_targetWorker.company||_targetWorker.contractor||'')}</div>`;
+  goStep(3);
+}
+
+// ── Camera ──────────────────────────────────────────────────
+const isStandalone = window.matchMedia('(display-mode:standalone)').matches || navigator.standalone === true;
+
+function startCamera() {
+  document.getElementById('scan-live-wrap').style.display = isStandalone ? 'block' : 'none';
+  document.getElementById('scan-file-wrap').style.display = isStandalone ? 'none' : 'block';
+  hideErr('err3');
+  if (!isStandalone) return;
+  if (typeof Html5Qrcode === 'undefined') { showErr('err3','QR library not loaded. Check internet.'); return; }
+  stopCamera();
+  Html5Qrcode.getCameras().then(cams => {
+    const cam = cams.find(c=>/back|rear|environment/i.test(c.label)) || cams[cams.length-1];
+    _qrScanner = new Html5Qrcode('qr-reader');
+    _qrScanner.start(
+      cam ? { deviceId:{ exact:cam.id } } : { facingMode:'environment' },
+      { fps:12, qrbox:{ width:220, height:220 } },
+      certNo => { stopCamera(); onScanned(certNo.trim()); },
+      ()=>{}
+    ).catch(err => {
+      showErr('err3','Camera error: '+err.message+'.\nPlease allow camera in settings.');
+    });
+  }).catch(()=>{
+    _qrScanner = new Html5Qrcode('qr-reader');
+    _qrScanner.start({ facingMode:'environment' }, { fps:12, qrbox:220 },
+      certNo => { stopCamera(); onScanned(certNo.trim()); }, ()=>{}
+    ).catch(err => showErr('err3','Camera: '+err.message));
+  });
+}
+
+function stopCamera() {
+  if (_qrScanner) { try{ _qrScanner.stop(); }catch(e){} _qrScanner=null; }
+  const el = document.getElementById('qr-reader'); if(el) el.innerHTML='';
+}
+
+function processQRImage(input) {
+  const file = input.files && input.files[0]; if(!file) return;
+  const pWrap = document.getElementById('qr-preview-wrap');
+  pWrap.style.display = 'block';
+  document.getElementById('qr-err-wrap').style.display = 'none';
+  document.getElementById('qr-decode-status').textContent = '⏳ Reading QR…';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      document.getElementById('qr-preview-img').src = e.target.result;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(img,0,0);
+      let found = false;
+      if (typeof jsQR==='function') {
+        const code = jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data, canvas.width, canvas.height);
+        if (code && code.data) { input.value=''; found=true; onScanned(code.data.trim()); }
+      }
+      if (!found) { document.getElementById('qr-decode-status').textContent=''; document.getElementById('qr-err-wrap').style.display='block'; input.value=''; }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Scanned data ───────────────────────────────────────────
+async function onScanned(certNo) {
+  stopCamera();
+  let finalCert = certNo.trim();
+  try { if(finalCert.startsWith('{')){ const j=JSON.parse(finalCert); if(j.id) finalCert=j.id.trim(); } } catch(e){}
+  finalCert = finalCert.toLowerCase();
+
+  load(true, 'Looking up '+(finalCert.length>20?finalCert.slice(0,20)+'…':finalCert)+'…');
+  try {
+    const rec = await api('getInductionByCert', { certNo: finalCert });
+    load(false);
+    if (!rec) throw new Error('Worker not found in induction database');
+    _workerRec = rec;
+
+    // Verify cert matches expected worker
+    const expectedCert = (_targetWorker?.certNo||'').toLowerCase();
+    const certMatch = !expectedCert || rec.certNo?.toLowerCase()===expectedCert;
+
+    document.getElementById('worker-confirm-card').innerHTML = `
+      <div class="confirm-name">${esc(rec.name)}</div>
+      <div class="confirm-row">🏢 ${esc(rec.contractor||'—')}</div>
+      <div class="confirm-row">🪪 ${esc(rec.certNo||'—')}</div>
+      ${!certMatch?`<div style="margin-top:8px;padding:8px 12px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:10px;font-size:11px;color:#fbbf24;font-weight:700">⚠️ QR doesn't match expected worker (${esc(_targetWorker?.name||'')})</div>`:''}
+      ${rec.valid
+        ? '<span class="valid-badge">✅ Valid Induction · '+esc(rec.expiry)+'</span>'
+        : '<span class="expired-badge">❌ Expired · '+esc(rec.expiry)+'</span>'}`;
+
+    document.getElementById('exec-ack').style.display = _action==='Start' ? 'block' : 'none';
+    document.getElementById('exec-check').checked = false;
+    hideErr('err4');
+    goStep(4);
+    if (navigator.vibrate) navigator.vibrate([10,40,10,40,10]);
+  } catch(e) {
+    load(false);
+    showErr('err3', e.message);
+    if (isStandalone) startCamera();
+  }
+}
+
+// ── Confirm ────────────────────────────────────────────────
+async function confirmScan() {
+  if (!_workerRec) { showErr('err4','No worker scanned.'); return; }
+  if (!_workerRec.valid) { showErr('err4','Induction expired — cannot record.'); return; }
+  if (_action==='Start' && !document.getElementById('exec-check').checked) { showErr('err4','Please confirm Work Execution Team briefing.'); return; }
+
+  load(true, 'Recording…');
+  try {
+    let res;
+    if (_isDailyMode) {
+      res = await api('ackDailyWorker', { permitNo:_permit.permitNo, entryId:INIT_ENTRY_ID, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor });
+    } else if (_action==='Acknowledgement') {
+      res = await api('recordWorkerAck', { permitNo:_permit.permitNo, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor });
+    } else {
+      res = await api('jobPerformerSign', { permitNo:_permit.permitNo, action:_action.toLowerCase(), certNo:_workerRec.certNo, workerName:_workerRec.name });
+    }
+    load(false);
+    if (navigator.vibrate) navigator.vibrate([20,50,20,50,100]);
+
+    // Show success
+    [1,2,3,4].forEach(i=>{ const el=document.getElementById('step'+i); if(el) el.style.display='none'; });
+    document.getElementById('pip1').className='step-pip done';
+    document.getElementById('pip2').className='step-pip done';
+    document.getElementById('pip3').className='step-pip done';
+    document.getElementById('pip4').className='step-pip done';
+
+    const sc = document.getElementById('success-card');
+    sc.style.display = 'block';
+    document.getElementById('suc-title').textContent = _action + ' Recorded ✓';
+    document.getElementById('suc-sub').textContent = _permit.permitNo + ' · ' + new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+    const prog = document.getElementById('suc-progress');
+    if (res && res.totalWorkers) {
+      prog.textContent = (res.ackedCount||0)+' / '+res.totalWorkers+' workers acknowledged';
+      prog.style.display = 'inline-block';
+      if (res.advanced) {
+        prog.textContent = '🎉 All workers acknowledged! Permit ready for Acceptor.';
+        prog.style.background = 'rgba(34,211,160,.2)'; prog.style.borderColor='rgba(34,211,160,.4)';
+      }
+    } else { prog.style.display='none'; }
+  } catch(e) {
+    load(false);
+    showErr('err4', e.message);
+  }
+}
+
+function resetToStep2() {
+  _workerRec = null; _targetWorker = null;
+  // Re-fetch permit to get updated ack counts
+  if (_permit) {
+    api('getPermitByNo',{permitNo:_permit.permitNo}).then(p=>{ if(p) _permit=p; renderStep2(); }).catch(()=>renderStep2());
+  }
+  goStep(2);
+}
+
+// ── PWA Install ───────────────────────────────────────────────
+let _deferredPrompt = null;
+const isInstalled = window.matchMedia('(display-mode:standalone)').matches || navigator.standalone === true;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  if (!isInstalled && !sessionStorage.getItem('install-dismissed')) {
+    document.getElementById('install-banner').style.display = 'flex';
+  }
+});
+
+async function triggerInstall() {
+  if (!_deferredPrompt) {
+    // iOS: show manual instructions
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (ios) {
+      alert('To install: Tap Share then Add to Home Screen (iOS) or use browser menu (Android)');
+    } else {
+      alert('Use browser menu or address bar install icon to add this app to your Home Screen');
+    }
+    return;
+  }
+  _deferredPrompt.prompt();
+  const { outcome } = await _deferredPrompt.userChoice;
+  _deferredPrompt = null;
+  document.getElementById('install-banner').style.display = 'none';
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').style.display = 'none';
+  sessionStorage.setItem('install-dismissed', '1');
+}
+
+// Show install banner for iOS after 2 seconds (no beforeinstallprompt on iOS)
+setTimeout(() => {
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !navigator.standalone;
+  if (ios && !sessionStorage.getItem('install-dismissed')) {
+    document.getElementById('install-banner').style.display = 'flex';
+  }
+}, 2000);
+
+// ── Init ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (INIT_PERMIT_NO) {
+    load(true,'Loading permit…');
+    api('getPermitByNo',{permitNo:INIT_PERMIT_NO})
+      .then(p=>{ load(false); if(p){selectPermit(p);}else{loadPermitList();} })
+      .catch(()=>{ load(false); loadPermitList(); });
+  } else {
+    loadPermitList();
+  }
+});
+</script>
+</body>
+</html>
