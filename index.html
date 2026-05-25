@@ -708,106 +708,125 @@ tbody tr:last-child td { border-bottom:none; }
 }
 .shift-card:hover { border-color:var(--blue); background:var(--blue-light); color:var(--blue-dark); }
 .shift-card.active-shift { border-color:var(--navy); background:var(--navy); color:#fff; }
+
+/* ── Skeleton loader ─────────────────────────────────────── */
+.skel {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: skelShimmer 1.4s ease-in-out infinite;
+}
+@keyframes skelShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Page transition ─────────────────────────────────────── */
+.page { animation: none; }
+.page.active { animation: pageIn .22s ease both; }
+@keyframes pageIn {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:none; }
+}
+
+/* ── Loading indicator bar at top ────────────────────────── */
+#top-progress {
+  position:fixed; top:0; left:0; height:3px; z-index:9999;
+  background:linear-gradient(90deg,#3b82f6,#22d3a0);
+  transition:width .3s ease, opacity .4s;
+  border-radius:0 2px 2px 0;
+  width:0; opacity:0;
+}
+#top-progress.loading { opacity:1; }
+
 </style>
 </head>
 <body>
+<div id="top-progress"></div>
 
 <!-- ══════════════════════ AUTH SCREENS ══════════════════════ -->
 
 <!-- LOGIN -->
 <div id="login-screen" class="auth-wrap" style="display:none">
-
-  <!-- Animated canvas background -->
   <canvas id="login-canvas" style="position:fixed;inset:0;z-index:0;pointer-events:none"></canvas>
 
-  <!-- Landscape two-column layout -->
-  <div style="display:flex;width:100%;max-width:960px;min-height:560px;border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.45);position:relative;z-index:1;border:1px solid rgba(255,255,255,.15)">
+  <div style="position:relative;z-index:1;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px">
 
-    <!-- LEFT PANEL — Branding + Scanner -->
-    <div style="flex:1;background:linear-gradient(145deg,rgba(10,20,60,.82),rgba(30,15,70,.78));-webkit-;display:flex;flex-direction:column;justify-content:space-between;padding:40px 36px;border-right:1px solid rgba(255,255,255,.12)">
-
-      <!-- Logo -->
+    <!-- Floating top brand bar -->
+    <div style="position:fixed;top:0;left:0;right:0;z-index:10;padding:16px 28px;display:flex;align-items:center;gap:14px;background:rgba(5,12,30,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)">
+      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#10b981);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;letter-spacing:.3px;box-shadow:0 2px 10px rgba(59,130,246,.4)">HLL</div>
       <div>
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px">
-          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#4f8ef7,#22d3a0);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;letter-spacing:1px;box-shadow:0 4px 16px rgba(79,142,247,.45)">HLL</div>
-          <div>
-            <div style="color:#fff;font-size:18px;font-weight:800;letter-spacing:.3px">Lifecare Limited</div>
-            <div style="color:rgba(255,255,255,.55);font-size:11px;letter-spacing:.5px">Peroorkada Factory · Thiruvananthapuram</div>
-          </div>
-        </div>
-
-        <div style="margin-bottom:8px">
-          <div style="display:inline-block;background:rgba(79,142,247,.2);border:1px solid rgba(79,142,247,.35);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:#7eb8ff;letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px">Digital Safety System</div>
-          <div style="color:#fff;font-size:28px;font-weight:900;line-height:1.2;letter-spacing:-.3px">Permit to<br>Work Portal</div>
-          <div style="color:rgba(255,255,255,.55);font-size:12px;margin-top:8px;line-height:1.6">SAF 21/R01 · Compliant workflow<br>Digital signatures · Real-time tracking</div>
-        </div>
-
-        <!-- Feature pills -->
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:20px">
-          <span style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.65)">Multi-role approval</span>
-        <span style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.65)">7-day permits</span>
-        <span style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.65)">Digital signatures</span>
-        <span style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.65)">Induction verification</span>
-        <span style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.65)">Duty officer routing</span>
-        <span style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.65)">QR sign-off</span>
-        </div>
+        <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.2">HLL Lifecare Limited</div>
+        <div style="color:rgba(255,255,255,.4);font-size:11px">Peroorkada Factory · Thiruvananthapuram</div>
       </div>
-
-      <!-- Scanner Card -->
-      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:16px;margin-top:24px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="flex-shrink:0">
-            <div id="login-qr" style="background:#fff;padding:5px;border-radius:8px;display:inline-block;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div>
-            <div style="color:rgba(255,255,255,.4);font-size:9px;text-align:center;margin-top:4px">Scan with camera</div>
-          </div>
-          <div style="flex:1">
-            <div style="color:#fff;font-size:11px;font-weight:700;margin-bottom:3px">📷 Job Performer Sign-off</div>
-            <div style="color:rgba(255,255,255,.55);font-size:10px;line-height:1.5;margin-bottom:8px">Scan QR → enter permit no. → scan induction cert to sign start/stop</div>
-            <button onclick="openScannerPage('')" style="background:linear-gradient(90deg,rgba(79,142,247,.7),rgba(34,211,160,.6));border:1px solid rgba(255,255,255,.2);color:#fff;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">▶ Open Scanner</button>
-          </div>
-        </div>
-      </div>
+      <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.4px">PTW System</div>
     </div>
 
-    <!-- RIGHT PANEL — Login form -->
-    <div style="width:380px;background:rgba(255,255,255,.68);-webkit-;display:flex;flex-direction:column;justify-content:center;padding:44px 40px">
+    <!-- Center card -->
+    <div style="width:100%;max-width:420px;margin-top:60px">
 
-      <div style="font-size:22px;font-weight:800;color:#0a1628;margin-bottom:4px">Welcome back</div>
-      <div style="font-size:13px;color:#64748b;margin-bottom:28px">Sign in to your PTW account</div>
-
-      <div id="lerr" class="auth-alert err" style="display:none"><span>⚠</span><span></span></div>
-
-      <div class="fg" style="margin-bottom:14px">
-        <label style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Email Address</label>
-        <input type="email" id="l-email" placeholder="you@hll.com" autocomplete="email"
-          style="width:100%;padding:11px 14px;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:rgba(255,255,255,.8);transition:all .15s;color:#0a1628"
-          onkeydown="if(event.key==='Enter')focusEl('l-pw')">
-      </div>
-
-      <div class="fg" style="margin-bottom:22px">
-        <label style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Password</label>
-        <div style="position:relative">
-          <input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"
-            style="width:100%;padding:11px 40px 11px 14px;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:rgba(255,255,255,.8);transition:all .15s;color:#0a1628"
-            onkeydown="if(event.key==='Enter')doLogin()">
-          <button onclick="togglePw('l-pw',this)" type="button" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;font-size:16px;cursor:pointer;padding:4px">👁</button>
+      <!-- Hero text above card -->
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.25);border-radius:99px;padding:5px 14px;margin-bottom:14px">
+          <span style="width:7px;height:7px;border-radius:50%;background:#22d3a0;display:inline-block;animation:pulse2 2s ease-in-out infinite"></span>
+          <span style="font-size:11px;font-weight:700;color:#93c5fd;letter-spacing:.6px;text-transform:uppercase">Permit to Work · Active</span>
         </div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:5px">First login? Leave blank and click Sign In</div>
+        <div style="font-size:34px;font-weight:900;color:#fff;line-height:1.15;letter-spacing:-.5px">Safety Portal</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:6px">HLL Lifecare Ltd.</div>
       </div>
 
-      <button onclick="doLogin()"
-        style="width:100%;padding:13px;background:linear-gradient(135deg,#2563eb,#4f8ef7);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.4);transition:all .2s;letter-spacing:.2px;margin-bottom:14px">
-        Sign In →
-      </button>
+      <!-- Glass card -->
+      <div style="background:rgba(255,255,255,.08);backdrop-filter:saturate(160%) blur(24px);-webkit-backdrop-filter:saturate(160%) blur(24px);border:1px solid rgba(255,255,255,.16);border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)">
 
-      <div style="text-align:center;margin-top:20px;font-size:10px;color:#94a3b8">
-        HLL Lifecare Ltd. · Safety Management System<br>
-        <span style="opacity:.7">PTW System v19 · SAF 21/R01</span>
+        <!-- Card top stripe -->
+        <div style="height:3px;background:linear-gradient(90deg,#3b82f6,#8b5cf6,#10b981)"></div>
+
+        <div style="padding:32px 30px">
+
+          <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Sign in</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:24px">Access your permit dashboard</div>
+
+          <div id="lerr" class="auth-alert err" style="display:none"><span>⚠</span><span id="lerr-txt"></span></div>
+
+          <!-- Email field -->
+          <div style="margin-bottom:14px">
+            <label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Email</label>
+            <input type="email" id="l-email" placeholder="yourname@hll.com" autocomplete="email"
+              style="width:100%;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:rgba(255,255,255,.1);color:#fff;transition:all .15s;caret-color:#3b82f6"
+              onfocus="this.style.borderColor='rgba(59,130,246,.6)';this.style.background='rgba(255,255,255,.14)'"
+              onblur="this.style.borderColor='rgba(255,255,255,.18)';this.style.background='rgba(255,255,255,.1)'"
+              onkeydown="if(event.key==='Enter')focusEl('l-pw')">
+          </div>
+
+          <!-- Password field -->
+          <div style="margin-bottom:22px">
+            <label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Password</label>
+            <div style="position:relative">
+              <input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"
+                style="width:100%;padding:13px 44px 13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:rgba(255,255,255,.1);color:#fff;transition:all .15s;caret-color:#3b82f6"
+                onfocus="this.style.borderColor='rgba(59,130,246,.6)';this.style.background='rgba(255,255,255,.14)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.18)';this.style.background='rgba(255,255,255,.1)'"
+                onkeydown="if(event.key==='Enter')doLogin()">
+              <button type="button" onclick="togglePw('l-pw',this)" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;padding:4px;line-height:1">👁</button>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:5px">New user? Leave password blank.</div>
+          </div>
+
+          <!-- Sign in button -->
+          <button type="button" onclick="doLogin()"
+            style="width:100%;padding:14px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.5),inset 0 1px 0 rgba(255,255,255,.2);transition:all .2s;letter-spacing:.2px">
+            Sign In →
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:.3px">
+        SAF 21/R01 &nbsp;·&nbsp; Issue 03 &nbsp;·&nbsp; Eff. 15.01.2026 &nbsp;·&nbsp; Approved by Gokul V Babu
       </div>
     </div>
   </div>
 </div>
-
 
 
 <!-- SET PASSWORD (first-time) -->
@@ -976,7 +995,6 @@ tbody tr:last-child td { border-bottom:none; }
       <button class="nav-item active" id="nav-dashboard"   onclick="nav('dashboard')">   <span class="ni-icon">◈</span> Dashboard</button>
       <button class="nav-item"        id="nav-new-permit"  onclick="nav('new-permit')">  <span class="ni-icon">＋</span> New Permit</button>
       <button class="nav-item"        id="nav-my-permits"  onclick="nav('my-permits')">  <span class="ni-icon">◻</span> My Permits</button>
-      <button class="nav-item"        id="nav-scanner"     onclick="openScannerPage('')"> <span class="ni-icon">📷</span> Scanner</button>
       <button class="nav-item"        id="nav-all-permits" onclick="nav('all-permits')"> <span class="ni-icon">▦</span> All Permits</button>
       <button class="nav-item"        id="nav-sub-approval" onclick="nav('sub-approval')"><span class="ni-icon">🔄</span> Substitute Approval</button>
 
@@ -1502,7 +1520,14 @@ function closeSidebar() {
 // ══════════════════════════════════════════════════════════════
 // UI HELPERS
 // ══════════════════════════════════════════════════════════════
-function load(v) { const el=document.getElementById('loader'); if(el) el.style.display=v?'flex':'none'; }
+function load(v) {
+  const el=document.getElementById('loader');
+  if(el) el.style.display=v?'flex':'none';
+  const bar=document.getElementById('top-progress');
+  if(!bar) return;
+  if(v){ bar.style.width='0'; bar.classList.add('loading'); setTimeout(()=>{bar.style.width='75%';},20); }
+  else { bar.style.width='100%'; setTimeout(()=>{ bar.classList.remove('loading'); bar.style.width='0'; },350); }
+}
 function focusEl(id) { const el=document.getElementById(id); if(el) setTimeout(()=>el.focus(),50); }
 function v(id) { return (document.getElementById(id)||{}).value||''; }
 
@@ -1703,7 +1728,15 @@ async function doBroadcast() {
 // ══════════════════════════════════════════════════════════════
 function loadDashboard() {
   const el=document.getElementById('pg-dashboard');
-  el.innerHTML='<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+  el.innerHTML=`
+    <div class="ph" style="padding:20px">
+      <div class="ph-title">&nbsp;</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0">
+        ${Array.from({length:4},()=>'<div class="skel" style="height:90px;border-radius:12px"></div>').join('')}
+      </div>
+      <div class="skel" style="height:18px;width:40%;border-radius:8px;margin-bottom:12px"></div>
+      ${Array.from({length:3},()=>'<div class="skel" style="height:72px;border-radius:10px;margin-bottom:8px"></div>').join('')}
+    </div>`;
   api('getDashboardStats').then(raw=>{
     const s = raw || {};
     const canCreate = (CU.roles||[CU.role]).some(r=>['Admin','Originator','Safety','Acceptor'].includes(r));
@@ -1742,7 +1775,11 @@ function loadDashboard() {
 function loadList(scope) {
   const pgId='pg-'+(scope==='my'?'my':'all')+'-permits';
   const el=document.getElementById(pgId);
-  el.innerHTML='<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+  el.innerHTML=`
+    <div style="padding:16px">
+      <div class="skel" style="height:36px;border-radius:8px;margin-bottom:12px"></div>
+      ${Array.from({length:5},(_,i)=>`<div class="skel" style="height:80px;border-radius:10px;margin-bottom:8px;animation-delay:${i*.08}s"></div>`).join('')}
+    </div>`;
   api(scope==='my'?'getMyPermits':'getAllPermits').then(raw=>{
     const permits = Array.isArray(raw) ? raw : (Array.isArray(raw?.permits) ? raw.permits : []);
     window['_p_'+scope]=permits;
@@ -4832,6 +4869,7 @@ function buildPrintHTML(p, sigs, log, gasTests, workerScans) {
 </style>
 </head>
 <body>
+<div id="top-progress"></div>
 <div class="page">
 
 <!-- ════════════════════════════════════
