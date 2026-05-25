@@ -749,81 +749,90 @@ tbody tr:last-child td { border-bottom:none; }
 <div id="login-screen" class="auth-wrap" style="display:none">
   <canvas id="login-canvas" style="position:fixed;inset:0;z-index:0;pointer-events:none"></canvas>
 
-  <div style="position:relative;z-index:1;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px">
+  <div style="position:relative;z-index:1;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px 32px">
 
-    <!-- Floating top brand bar -->
-    <div style="position:fixed;top:0;left:0;right:0;z-index:10;padding:16px 28px;display:flex;align-items:center;gap:14px;background:rgba(5,12,30,.6);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)">
-      <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#10b981);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;letter-spacing:.3px;box-shadow:0 2px 10px rgba(59,130,246,.4)">HLL</div>
-      <div>
-        <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.2">HLL Lifecare Limited</div>
-        <div style="color:rgba(255,255,255,.4);font-size:11px">Peroorkada Factory · Thiruvananthapuram</div>
-      </div>
-      <div style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.4px">PTW System</div>
+    <!-- Top bar -->
+    <div style="position:fixed;top:0;left:0;right:0;z-index:20;height:52px;background:rgba(5,12,30,.7);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 20px;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#10b981);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;flex-shrink:0">HLL</div>
+      <span style="color:#fff;font-size:13px;font-weight:700">HLL Lifecare Limited</span>
+      <span style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.28);letter-spacing:.4px">Peroorkada Factory</span>
     </div>
 
-    <!-- Center card -->
-    <div style="width:100%;max-width:420px;margin-top:60px">
+    <!-- Main content -->
+    <div style="width:100%;max-width:400px;margin-top:52px">
 
-      <!-- Hero text above card -->
-      <div style="text-align:center;margin-bottom:28px">
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.25);border-radius:99px;padding:5px 14px;margin-bottom:14px">
-          <span style="width:7px;height:7px;border-radius:50%;background:#22d3a0;display:inline-block;animation:pulse2 2s ease-in-out infinite"></span>
-          <span style="font-size:11px;font-weight:700;color:#93c5fd;letter-spacing:.6px;text-transform:uppercase">Permit to Work · Active</span>
+      <!-- Illustration area -->
+      <div style="text-align:center;padding:32px 0 28px">
+        <!-- Shield icon SVG -->
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border-radius:24px;background:linear-gradient(135deg,rgba(59,130,246,.25),rgba(16,185,129,.2));border:1px solid rgba(59,130,246,.3);margin-bottom:18px;box-shadow:0 8px 32px rgba(59,130,246,.2)">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 3L5 9V20C5 28.5 11.5 36 20 38C28.5 36 35 28.5 35 20V9L20 3Z" fill="rgba(59,130,246,.3)" stroke="#3b82f6" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M14 20L18 24L27 15" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
-        <div style="font-size:34px;font-weight:900;color:#fff;line-height:1.15;letter-spacing:-.5px">Safety Portal</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:6px">HLL Lifecare Ltd.</div>
+        <div style="font-size:28px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.2">Permit to Work</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.4);margin-top:5px">Safety Management Portal</div>
       </div>
 
-      <!-- Glass card -->
-      <div style="background:rgba(255,255,255,.08);backdrop-filter:saturate(160%) blur(24px);-webkit-backdrop-filter:saturate(160%) blur(24px);border:1px solid rgba(255,255,255,.16);border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)">
+      <!-- Login card -->
+      <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15)">
 
-        <!-- Card top stripe -->
-        <div style="height:3px;background:linear-gradient(90deg,#3b82f6,#8b5cf6,#10b981)"></div>
+        <!-- Gradient stripe -->
+        <div style="height:2px;background:linear-gradient(90deg,#3b82f6 0%,#8b5cf6 50%,#10b981 100%)"></div>
 
-        <div style="padding:32px 30px">
-
-          <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Sign in</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:24px">Access your permit dashboard</div>
+        <div style="padding:28px 26px">
 
           <div id="lerr" class="auth-alert err" style="display:none"><span>⚠</span><span id="lerr-txt"></span></div>
 
-          <!-- Email field -->
+          <!-- Email -->
           <div style="margin-bottom:14px">
-            <label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Email</label>
-            <input type="email" id="l-email" placeholder="yourname@hll.com" autocomplete="email"
-              style="width:100%;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:rgba(255,255,255,.1);color:#fff;transition:all .15s;caret-color:#3b82f6"
-              onfocus="this.style.borderColor='rgba(59,130,246,.6)';this.style.background='rgba(255,255,255,.14)'"
-              onblur="this.style.borderColor='rgba(255,255,255,.18)';this.style.background='rgba(255,255,255,.1)'"
-              onkeydown="if(event.key==='Enter')focusEl('l-pw')">
-          </div>
-
-          <!-- Password field -->
-          <div style="margin-bottom:22px">
-            <label style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Password</label>
+            <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Email Address</label>
             <div style="position:relative">
-              <input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"
-                style="width:100%;padding:13px 44px 13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:12px;font-size:14px;font-family:inherit;outline:none;background:rgba(255,255,255,.1);color:#fff;transition:all .15s;caret-color:#3b82f6"
-                onfocus="this.style.borderColor='rgba(59,130,246,.6)';this.style.background='rgba(255,255,255,.14)'"
-                onblur="this.style.borderColor='rgba(255,255,255,.18)';this.style.background='rgba(255,255,255,.1)'"
-                onkeydown="if(event.key==='Enter')doLogin()">
-              <button type="button" onclick="togglePw('l-pw',this)" style="position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;padding:4px;line-height:1">👁</button>
+              <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.5">✉</span>
+              <input type="email" id="l-email" placeholder="name@hll.com" autocomplete="email"
+                style="width:100%;padding:12px 14px 12px 38px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:11px;color:#fff;font-size:14px;font-family:inherit;outline:none;caret-color:#3b82f6;transition:all .18s"
+                onfocus="this.style.borderColor='rgba(59,130,246,.55)';this.style.background='rgba(255,255,255,.12)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.08)'"
+                onkeydown="if(event.key==='Enter')focusEl('l-pw')">
             </div>
-            <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:5px">New user? Leave password blank.</div>
           </div>
 
-          <!-- Sign in button -->
+          <!-- Password -->
+          <div style="margin-bottom:22px">
+            <label style="display:block;font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Password</label>
+            <div style="position:relative">
+              <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.5">🔒</span>
+              <input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"
+                style="width:100%;padding:12px 44px 12px 38px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:11px;color:#fff;font-size:14px;font-family:inherit;outline:none;caret-color:#3b82f6;transition:all .18s"
+                onfocus="this.style.borderColor='rgba(59,130,246,.55)';this.style.background='rgba(255,255,255,.12)'"
+                onblur="this.style.borderColor='rgba(255,255,255,.15)';this.style.background='rgba(255,255,255,.08)'"
+                onkeydown="if(event.key==='Enter')doLogin()">
+              <button type="button" onclick="togglePw('l-pw',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.35);font-size:16px;cursor:pointer;padding:4px;line-height:1">👁</button>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,.25);margin-top:5px">New user? Leave blank — you'll set a password after sign in.</div>
+          </div>
+
+          <!-- Sign in -->
           <button type="button" onclick="doLogin()"
-            style="width:100%;padding:14px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(37,99,235,.5),inset 0 1px 0 rgba(255,255,255,.2);transition:all .2s;letter-spacing:.2px">
+            style="width:100%;padding:13px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.2px;box-shadow:0 4px 18px rgba(37,99,235,.45),inset 0 1px 0 rgba(255,255,255,.18);transition:all .2s;margin-bottom:10px">
             Sign In →
           </button>
+
+          <!-- Scanner link -->
+          <a href="./scanner.html" target="_blank"
+            style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px;background:rgba(16,185,129,.1);color:rgba(255,255,255,.65);border:1px solid rgba(16,185,129,.25);border-radius:12px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;cursor:pointer">
+            📷 Job Performer Scanner
+          </a>
 
         </div>
       </div>
 
       <!-- Footer -->
-      <div style="text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:.3px">
-        SAF 21/R01 &nbsp;·&nbsp; Issue 03 &nbsp;·&nbsp; Eff. 15.01.2026 &nbsp;·&nbsp; Approved by Gokul V Babu
+      <div style="text-align:center;margin-top:20px">
+        <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.4)">Safety &amp; Environment Dept, PFT</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.2);margin-top:3px;letter-spacing:.3px">SAF 21/R01 · Issue 03 · Rev 00 · Eff. 15.01.2026</div>
       </div>
+
     </div>
   </div>
 </div>
@@ -1752,12 +1761,12 @@ function loadDashboard() {
         </div>
       </div>
       <div class="stats-grid">
-        <div class="stat-card green"><div class="stat-num" style="color:var(--green)">${s.active}</div><div class="stat-label">✅ Active Permits</div></div>
-        <div class="stat-card amber"><div class="stat-num" style="color:var(--amber)">${s.pending}</div><div class="stat-label">⏳ Pending Approval</div></div>
-        <div class="stat-card purple"><div class="stat-num" style="color:var(--purple)">${s.pendingClosure}</div><div class="stat-label">🔏 Pending Closure</div></div>
-        <div class="stat-card slate"><div class="stat-num" style="color:var(--slate)">${s.closed}</div><div class="stat-label">📁 Closed</div></div>
-        <div class="stat-card blue"><div class="stat-num" style="color:var(--blue)">${s.total}</div><div class="stat-label">📊 Total Permits</div></div>
-        ${s.expiringSoon?`<div class="stat-card red"><div class="stat-num" style="color:var(--red)">${s.expiringSoon}</div><div class="stat-label">⚠️ Expiring in 48h</div></div>`:''}
+        <div class="stat-card green"><div class="stat-num" style="color:var(--green)">${s.active||0}</div><div class="stat-label">✅ Active Permits</div></div>
+        <div class="stat-card amber"><div class="stat-num" style="color:var(--amber)">${s.pending||0}</div><div class="stat-label">⏳ Pending Approval</div></div>
+        <div class="stat-card purple"><div class="stat-num" style="color:var(--purple)">${s.pendingClosure||0}</div><div class="stat-label">🔏 Pending Closure</div></div>
+        <div class="stat-card slate"><div class="stat-num" style="color:var(--slate)">${s.closed||0}</div><div class="stat-label">📁 Closed</div></div>
+        <div class="stat-card blue"><div class="stat-num" style="color:var(--blue)">${s.total||0}</div><div class="stat-label">📊 Total Permits</div></div>
+        ${s.expiringSoon?`<div class="stat-card red"><div class="stat-num" style="color:var(--red)">${s.expiringSoon||0}</div><div class="stat-label">⚠️ Expiring in 48h</div></div>`:''}
       </div>
       <div class="card">
         <div class="form-section-header"><span class="fs-num">📋</span><span class="fs-title">Recent Permits</span></div>
@@ -2301,9 +2310,9 @@ function renderForm() {
           {code:'4D',label:'Job Performer',sub:'Start &amp; Stop',note:'Signed on Activation'}
         ].map(s=>`
           <div style="border:1px solid #e2e8f0;border-radius:var(--radius-sm);overflow:hidden">
-            <div style="background:#0f172a;color:#fff;padding:6px 10px;font-size:11px;font-weight:700">${s.code} — ${s.label}</div>
-            <div style="padding:8px 10px;font-size:10px;color:var(--slate)">${s.sub}</div>
-            <div style="padding:6px 10px;background:#f8fafc;font-size:10px;color:var(--blue-dark);font-style:italic;border-top:1px solid #e2e8f0">${s.note}</div>
+            <div style="background:#0f172a;color:#fff;padding:6px 10px;font-size:11px;font-weight:700">${s.code||0} — ${s.label||0}</div>
+            <div style="padding:8px 10px;font-size:10px;color:var(--slate)">${s.sub||0}</div>
+            <div style="padding:6px 10px;background:#f8fafc;font-size:10px;color:var(--blue-dark);font-style:italic;border-top:1px solid #e2e8f0">${s.note||0}</div>
           </div>`).join('')}
       </div>
     </div>
@@ -2643,7 +2652,7 @@ function onWorkEntryChange() {
   const { shifts, dutyRequired, shift3 } = detectShifts(fromVal, toVal);
 
   badges.innerHTML = shifts.map(s =>
-    `<span style="padding:3px 10px;border-radius:10px;background:${s.color}22;color:${s.color};border:1px solid ${s.color}44;font-size:12px;font-weight:700">${s.label}</span>`
+    `<span style="padding:3px 10px;border-radius:10px;background:${s.color||0}22;color:${s.color||0};border:1px solid ${s.color||0}44;font-size:12px;font-weight:700">${s.label||0}</span>`
   ).join('');
 
   dutyW.style.display  = dutyRequired && !shift3 ? 'flex' : 'none';
@@ -2766,7 +2775,7 @@ function renderEntriesList() {
 
 function renderEntryCard(e, isOpen, dayNum) {
   const shiftBadges = e.shifts.map(s=>
-    `<span style="padding:2px 8px;border-radius:10px;background:${s.color}22;color:${s.color};border:1px solid ${s.color}44;font-size:11px;font-weight:700">${s.label}</span>`
+    `<span style="padding:2px 8px;border-radius:10px;background:${s.color||0}22;color:${s.color||0};border:1px solid ${s.color||0}44;font-size:11px;font-weight:700">${s.label||0}</span>`
   ).join('');
 
   return `<div style="border:1.5px solid ${isOpen?'var(--blue)':'var(--border)'};border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px">
@@ -4075,7 +4084,7 @@ function loadUsers() {
 
 function renderUsers(users) {
   if (!users||!users.length) return `<div class="empty-state"><div class="es-icon">👥</div><div class="es-title">No users found</div></div>`;
-  return users.map(u=>`
+  return users.filter(u=>u&&u.email).map(u=>`
     <div class="user-card">
       <div class="user-av" style="background:${rcolor(u.role)}">${(u.name||'?')[0].toUpperCase()}</div>
       <div class="user-info">
@@ -4653,12 +4662,12 @@ function renderWorkflow(p, sigs, log) {
       <div style="display:flex;gap:12px;padding:12px 0;${i<steps.length-1?'border-bottom:1px solid #f1f5f9':''}">
         <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
           <div style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;${s.done?'background:var(--green);color:#fff':isActive?'background:var(--amber);color:#fff':'background:#f1f5f9;color:var(--slate)'}">${s.done?'✓':s.icon}</div>
-          <div style="font-size:10px;color:var(--slate);margin-top:3px;font-weight:700">${s.num}</div>
+          <div style="font-size:10px;color:var(--slate);margin-top:3px;font-weight:700">${s.num||0}</div>
         </div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <span style="font-size:13px;font-weight:700;color:var(--navy)">${s.role}</span>
-            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;${s.done?'background:#dcfce7;color:#14532d':isActive?'background:#fef3c7;color:#92400e':'background:#f1f5f9;color:var(--slate)'}">${s.status}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--navy)">${s.role||0}</span>
+            <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;${s.done?'background:#dcfce7;color:#14532d':isActive?'background:#fef3c7;color:#92400e':'background:#f1f5f9;color:var(--slate)'}">${s.status||0}</span>
           </div>
           <div style="font-size:12px;color:var(--slate);margin-top:2px">${esc(s.name||'—')}</div>
           ${s.time?`<div style="font-size:11px;color:var(--slate);margin-top:2px">🕐 ${fd(s.time)}</div>`:''}
@@ -4776,7 +4785,7 @@ function buildPrintHTML(p, sigs, log, gasTests, workerScans) {
       <div style="font-size:8px;color:#444;margin-bottom:3px">${sub||''}</div>
       ${hasSig
         ? `<div style="border:1px dashed #bbb;border-radius:3px;padding:2px;margin:3px 0;text-align:center">
-             <img src="${s.signatureData}" alt="${esc2(s.name||'')} signature"
+             <img src="${s.signatureData||0}" alt="${esc2(s.name||'')} signature"
                style="display:block;height:42px;width:100%;object-fit:contain;max-width:160px;margin:0 auto">
            </div>`
         : `<div style="height:42px;border-bottom:1px dotted #999;margin:4px 0"></div>`
