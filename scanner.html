@@ -553,10 +553,23 @@ function renderStep2() {
   document.getElementById('step2-title').textContent = _isDailyMode ? 'Daily Worker Ack' : 'Select Worker';
 
   // Permit info
+  const fmtDate = d => { try{return d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';}catch(e){return d||'—';} };
   document.getElementById('permit-info').innerHTML = `
-    <div class="info-label">Permit</div>
-    <div class="info-val">${esc(p.permitNo)} — ${esc(p.type||'')} · ${esc(p.status||'')}</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">📍 ${esc(p.workArea||'—')}</div>`;
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
+      <div>
+        <div class="info-label">Permit Number</div>
+        <div class="info-val">${esc(p.permitNo)} <span style="font-weight:400;color:rgba(255,255,255,.45);font-size:12px">· ${esc(p.type||'')}</span></div>
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(59,130,246,.2);color:#93c5fd;border:1px solid rgba(59,130,246,.3)">${esc(p.status||'')}</span>
+    </div>
+    <div style="height:1px;background:rgba(255,255,255,.08);margin:8px 0"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+      <div><div class="info-label">Work Area</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:1px">📍 ${esc(p.workArea||'—')}</div></div>
+      <div><div class="info-label">Originator</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:1px">👤 ${esc(p.originatorName||'—')}</div></div>
+      <div><div class="info-label">Permit Acceptor</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:1px">✅ ${esc(p.acceptorName||'—')}</div></div>
+      <div><div class="info-label">Valid Until</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:1px">📅 ${fmtDate(p.validTo)}</div></div>
+    </div>
+    ${p.jobDescription?`<div style="margin-top:6px"><div class="info-label">Job Description</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:1px;line-height:1.5">${esc(p.jobDescription.slice(0,120))}${p.jobDescription.length>120?'…':''}</div></div>`:''}`;
 
   // Action chips
   let actions = [{ id:'Acknowledgement', label:'✍ Acknowledgement' }];
@@ -591,8 +604,17 @@ function renderWorkerList() {
   } else {
     workers = (ex.workEntries||[]).flatMap(e => e.workers||[]);
     if (!workers.length) workers = ex.workers||[];
+    // If still empty — extras may not be loaded in list view, refetch full permit
+    if (!workers.length && _permit.permitNo && !_permit._fullLoaded) {
+      load(true,'Loading workers…');
+      api('getPermitByNo', {permitNo: _permit.permitNo}).then(full => {
+        load(false);
+        if (full) { full._fullLoaded=true; _permit=full; renderWorkerList(); }
+      }).catch(()=>load(false));
+      return;
+    }
   }
-  if (!workers.length) { el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.4);font-size:13px;padding:16px">No workers found in this permit.</div>'; return; }
+  if (!workers.length) { el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.4);font-size:14px;padding:20px">No workers found in this permit.<br><span style="font-size:11px;opacity:.6">Ensure workers were added in Section 7.</span></div>'; return; }
 
   const colors = ['#4f8ef7','#a78bfa','#22d3a0','#fbbf24','#f87171','#60a5fa'];
   el.innerHTML = workers.map((w,i) => {
