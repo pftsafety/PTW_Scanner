@@ -1481,12 +1481,10 @@ function launchApp() {
   const sbAv=document.getElementById('sb-av'); if(sbAv) sbAv.textContent=(CU.name||'?')[0].toUpperCase();
   const adminNav=document.getElementById('admin-nav-section'); if(adminNav) adminNav.style.display=(CU.roles||[CU.role]).includes('Admin')?'block':'none';
   const newPermitNav=document.getElementById('nav-new-permit'); if(newPermitNav) newPermitNav.style.display=(CU.roles||[CU.role]).some(r=>['Safety Dept','Duty Officer'].includes(r))?'none':'inline-flex';
-  // Defer non-critical calls so dashboard loads first
   nav('dashboard');
-  setTimeout(()=>{
-    api('getAllUsers').then(u=>{_allUsers=u;}).catch(()=>{});
-    loadNotifications();
-  }, 800);
+  // Load users immediately — needed for new permit form dropdowns
+  api('getAllUsers').then(u=>{ _allUsers = Array.isArray(u)?u:[]; }).catch(()=>{});
+  loadNotifications();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1508,7 +1506,7 @@ function nav(page, arg) {
   closeSidebar();
   switch(page) {
     case 'dashboard':   loadDashboard();    break;
-    case 'new-permit':  renderForm();       break;
+    case 'new-permit':  renderForm();  break;
     case 'my-permits':  loadList('my');     break;
     case 'all-permits': loadList('all');    break;
     case 'view-permit': loadView(arg);      break;
@@ -1825,12 +1823,18 @@ function filterList(scope) {
 // ══════════════════════════════════════════════════════════════
 let _workerIdx=1;
 
-function renderForm() {
+async function renderForm() {
   _workerIdx=1;
   const el=document.getElementById('pg-new-permit');
+  if(!el) return;
+  el.innerHTML='<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+  // Ensure users are loaded
+  if (!_allUsers||!_allUsers.length) {
+    try { _allUsers = await api('getAllUsers') || []; } catch(e) { _allUsers=[]; }
+  }
   const today=new Date().toISOString().split('T')[0];
 
-  const safetyOpts=_allUsers.filter(u=>u.role==='Safety Officer'||u.role==='Admin').map(u=>
+  const safetyOpts=(_allUsers||[]).filter(u=>(u.roles||[u.role]).some(r=>r==='Safety'||r==='Admin')).map(u=>
     `<option value="${u.email}" data-name="${esc(u.name)}">${esc(u.name)} — ${esc(u.designation||u.role)} (${esc(u.department)})</option>`).join('');
   const acceptorOpts=_allUsers.filter(u=>u.email!==CU.email).map(u=>
     `<option value="${u.email}" data-name="${esc(u.name)}">${esc(u.name)} — ${esc(u.designation||u.role)} (${esc(u.department)})</option>`).join('');
