@@ -1755,7 +1755,7 @@ function loadDashboard() {
         </div>
         <div class="btn-group">
           ${canCreate?`<button class="btn btn-primary" onclick="nav('new-permit')">➕ New Permit</button>`:''}
-          ${CU.role==='Admin'?`<button class="btn btn-ghost" onclick="document.getElementById('bc-modal').classList.add('open')">📢 Broadcast</button>`:''}
+          ${CU.role==='Admin'?`<button class="btn btn-ghost" onclick="document.getElementById(&quot;bc-modal&quot;).classList.add(&quot;open&quot;)">📢 Broadcast</button>`:''}
         </div>
       </div>
       <div class="stats-grid">
@@ -4066,24 +4066,26 @@ async function saveNewUser() {
 function loadUsers() {
   const el=document.getElementById('pg-users');
   el.innerHTML='<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
-  api('getAdminUsers').then(users=>{ window._adminUsers = users||[];
-    window._adminUsers=users;
-    el.innerHTML=`
-      <div class="ph">
-        <div><div class="ph-title">User Management</div><div class="ph-sub">${users.length} registered user(s)</div></div>
-        <div class="btn-group">
-          <div class="search-input" style="width:200px"><input type="text" id="uq" placeholder="Search…" oninput="filterUsers()"></div>
-          <select class="filter-select" id="urf" onchange="filterUsers()">
-            <option value="">All Roles</option>
-            <option value="Admin">Admin</option><option value="Safety Officer">Safety Officer</option>
-            <option value="Originator">Originator</option><option value="Job Performer">Job Performer</option>
-          </select>
-          <button class="btn btn-primary btn-sm" onclick="openAddUser()">＋ Add User</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('bc-modal').classList.add('open')">📢 Broadcast</button>
-        </div>
-      </div>
-      <div id="ul">${renderUsers(users)}</div>`;
-  }).catch(e=>{ el.innerHTML=`<div class="card"><div class="alert alert-error">❌ ${e.message}</div></div>`; });
+  api('getAdminUsers').then(raw=>{
+    const users = Array.isArray(raw) ? raw : [];
+    window._adminUsers = users;
+    el.innerHTML = '<div class="ph">' +
+      '<div><div class="ph-title">User Management</div><div class="ph-sub">' + users.length + ' registered user(s)</div></div>' +
+      '<div class="btn-group">' +
+      '<div class="search-input" style="width:200px"><input type="text" id="uq" placeholder="Search…" oninput="filterUsers()"></div>' +
+      '<select class="filter-select" id="urf" onchange="filterUsers()">' +
+        '<option value="">All Roles</option>' +
+        '<option value="Admin">Admin</option>' +
+        '<option value="Safety">Safety Officer</option>' +
+        '<option value="Originator">Originator</option>' +
+        '<option value="Acceptor">Acceptor</option>' +
+        '<option value="Job Performer">Job Performer</option>' +
+      '</select>' +
+      '<button class="btn btn-primary btn-sm" onclick="openAddUser()">＋ Add User</button>' +
+      '<button class="btn btn-ghost" onclick="document.getElementById(&quot;bc-modal&quot;).classList.add(&quot;open&quot;)">📢 Broadcast</button>' +
+      '</div></div>' +
+      '<div id="ul">' + renderUsers(users) + '</div>';
+  }).catch(e=>{ el.innerHTML='<div class="card"><div class="alert alert-error">❌ ' + e.message + '</div></div>'; });
 }
 
 function renderUsers(users) {
