@@ -1591,8 +1591,23 @@ function runActionCallback() {
 
 // Status / role badges
 function sbadge(s) {
-  const m={'Pending Worker Acknowledgement':'badge-pending','Pending Acceptor':'badge-pending','Pending Safety':'badge-pending','Pending Duty Officer':'badge-closure','Active':'badge-active','Pending Closure':'badge-closure','Closed':'badge-closed','Cancelled':'badge-cancelled'};
-  return `<span class="badge ${m[s]||'badge-closed'}">${s}</span>`;
+  if (!s) return '<span class="badge badge-closed">Unknown</span>';
+  const m={
+    'Pending Worker Acknowledgement':'badge-pending',
+    'Pending Acceptor':'badge-pending',
+    'Pending Safety':'badge-pending',
+    'Pending Duty Officer':'badge-closure',
+    'Active':'badge-active',
+    'Pending Closure':'badge-closure',
+    'Pending Closure — Job Performer':'badge-closure',
+    'Pending Closure — Originator':'badge-closure',
+    'Pending Closure — Safety':'badge-closure',
+    'Pending Closure — Acceptor':'badge-closure',
+    'Closed':'badge-closed',
+    'Cancelled':'badge-cancelled',
+    'Rejected':'badge-cancelled'
+  };
+  return `<span class="badge ${m[s]||'badge-pending'}">${esc(s)}</span>`;
 }
 function rbadge(r, roles) {
   const m={
@@ -1670,7 +1685,8 @@ function permitTable(permits) {
 // ══════════════════════════════════════════════════════════════
 async function loadNotifications() {
   try {
-    const data=await api('getNotifications');
+    const raw=await api('getNotifications');
+    const data = (raw&&typeof raw==='object'&&!Array.isArray(raw)) ? raw : {items:[],unread:0};
     _notifItems=data.items||[];
     const u=data.unread||0;
     const badge=document.getElementById('notif-count');
@@ -1834,7 +1850,7 @@ async function renderForm() {
   }
   const today=new Date().toISOString().split('T')[0];
 
-  const safetyOpts=(_allUsers||[]).filter(u=>(u.roles||[u.role]).some(r=>r==='Safety'||r==='Admin')).map(u=>
+  const safetyOpts=(_allUsers||[]).filter(u=>{ const roles=u.roles||(u.role?[u.role]:[]);  return roles.some(r=>['Safety','Admin','Safety Officer'].includes(r)); }).map(u=>
     `<option value="${u.email}" data-name="${esc(u.name)}">${esc(u.name)} — ${esc(u.designation||u.role)} (${esc(u.department)})</option>`).join('');
   const acceptorOpts=_allUsers.filter(u=>u.email!==CU.email).map(u=>
     `<option value="${u.email}" data-name="${esc(u.name)}">${esc(u.name)} — ${esc(u.designation||u.role)} (${esc(u.department)})</option>`).join('');
@@ -4099,7 +4115,7 @@ function renderUsers(users) {
         <div class="user-meta">${esc(u.email)} · Card: ${esc(u.cardNo||'—')} · Joined: ${fd(u.registeredAt)}</div>
       </div>
       <div class="user-actions">
-        ${rbadge(u.role, u.roles)}
+        ${rbadge(u.role, Array.isArray(u.roles)?u.roles:[u.role||'Originator'])}
         <span class="badge ${u.status==='Active'?'badge-active':'badge-cancelled'}">${u.status||'Active'}</span>
         <span class="badge ${u.hasPassword?'badge-pw-set':'badge-pw-unset'}">${u.hasPassword?'🔒 Password set':'⚠️ No password'}</span>
         <button class="btn btn-ghost btn-xs" onclick="openEUByEmail('${esc(u.email)}')">✏️ Edit</button>
