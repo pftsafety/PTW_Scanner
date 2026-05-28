@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HLL PTW System – Peroorkada</title>
+<!-- v19.5 -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -1787,8 +1788,9 @@ function loadDashboard() {
         ${permitTable(s.recent)}
       </div>`;
   }).catch(e=>{
-    if(e.message.includes('Session expired')){logout();return;}
-    el.innerHTML=`<div class="card"><div class="alert alert-error">❌ ${e.message}</div></div>`;
+    console.error('Dashboard error:', e);
+    if(e.message&&e.message.includes('Session expired')){logout();return;}
+    el.innerHTML=`<div class="card"><div class="alert alert-error">❌ Dashboard error: ${e.message||'Unknown'}</div></div>`;
   });
 }
 
