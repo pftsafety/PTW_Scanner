@@ -1303,7 +1303,7 @@ async function api(action, payload={}) {
   if (!resp.ok) throw new Error('Server error '+resp.status);
   const json=await resp.json();
   if (!json.ok) throw new Error(json.error||'Unknown server error');
-  return json.data;
+  return json.result !== undefined ? json.result : json.data;
 }
 async function apiPub(action, payload) {
   const body = JSON.stringify({ action, payload, sessionToken:'' });
