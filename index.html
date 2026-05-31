@@ -3283,17 +3283,17 @@ function buildView(el, p, log, tests, scans, sigs) {
   // Action buttons
   let acts='';
   if (p.status==='Pending Acceptor'&&isAcc)
-    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Acceptor')">✅ Approve (Acceptor)</button>
+    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Acceptor')">Approve</button>
            <button class="btn btn-red"   onclick="doReject('${p.permitNo}','Acceptor')">✕ Reject</button>`;
   // Edit: only the originating user (strict email match, not Admin role)
   if (p.status==='Pending Acceptor' && CU.email===p.originatorEmail)
     acts+=`<button class="btn btn-ghost btn-sm" onclick="openEditPermit('${p.permitNo}')" style="color:var(--blue)">✏️ Edit Permit</button>`;
   if (p.status==='Pending Safety'&&isSaf)
-    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Safety')">✅ Approve (Safety Officer)</button>
+    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Safety')">Approve</button>
            <button class="btn btn-red"   onclick="doReject('${p.permitNo}','Safety Officer')">✕ Reject</button>`;
   const isDuty = _roles.includes('Duty Officer')||_roles.includes('Admin');
   if (p.status==='Pending Duty Officer'&&isDuty)
-    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Duty Officer')">✅ Approve (Duty Officer)</button>
+    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Duty Officer')">Approve</button>
            <button class="btn btn-red"   onclick="doReject('${p.permitNo}','Duty Officer')">✕ Reject</button>`;
   if (p.status==='Active'&&!p.jobStartTime)
     acts+=`<button class="btn btn-blue" onclick="doSign('${p.permitNo}','start')">▶ Sign START</button><button class="btn btn-ghost btn-sm" onclick="openScannerPage('${p.permitNo}')" style="color:var(--green)">📷 Scan Worker</button>`;
@@ -3846,7 +3846,7 @@ function buildView(el, p, log, tests, scans, sigs) {
         <div class="form-section-header"><div class="fs-num">04</div><div class="fs-title">Approval Workflow</div></div>
         <div class="timeline">
           ${tlStep('📝','Permit Originator',p.originatorName,'Signed & Submitted',p.originatorSignTime,true,false)}
-          ${tlStep('🏭','Permit Acceptor',p.acceptorName,'Site Verification & Sign-off',p.acceptorSignTime,!!p.acceptorSignTime,p.status==='Pending Acceptor')}
+          ${tlStep('🏭','Permit Acceptor',p.acceptorName,'Accepted',p.acceptorSignTime,!!p.acceptorSignTime,p.status==='Pending Acceptor')}
           ${tlStep('🛡️','Safety In-Charge',p.safetyName,'Safety Compliance Sign-off',p.safetySignTime,!!p.safetySignTime,p.status==='Pending Safety')}
           ${ex.dutyOfficerRequired?tlStep('⏱','Duty Officer',ex.dutyOfficerName||'','After-hours Endorsement',ex.dutyOfficerSignTime||null,!!ex.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
           ${tlStep('▶','Job Performer','','Work Started (Sign)',p.jobStartTime,!!p.jobStartTime,p.status==='Active'&&!p.jobStartTime)}
@@ -4268,15 +4268,15 @@ function setSigAction(action) {
   const lbl=document.getElementById('sig-comments-label');
   const submitBtn=document.getElementById('sig-submit-btn');
   if(action==='approve'){
-    btnA.className='btn btn-green'; btnR.className='btn btn-ghost';
-    btnR.style.color='var(--red)';
-    lbl.textContent='Comments / Remarks (optional)';
-    submitBtn.className='btn btn-green'; submitBtn.textContent='Approve & Sign →';
+    if(btnA) btnA.className='btn btn-green';
+    if(btnR){ btnR.className='btn btn-ghost'; btnR.style.color='var(--red)'; }
+    if(lbl) lbl.textContent='Comments / Remarks (optional)';
+    if(submitBtn){ submitBtn.className='btn btn-green'; submitBtn.textContent='Approve & Sign →'; }
   } else {
-    btnR.className='btn btn-red'; btnA.className='btn btn-ghost';
-    btnA.style.color='var(--green)';
-    lbl.textContent='Reason for Rejection * (required)';
-    submitBtn.className='btn btn-red'; submitBtn.textContent='Reject Permit →';
+    if(btnR) btnR.className='btn btn-red';
+    if(btnA){ btnA.className='btn btn-ghost'; btnA.style.color='var(--green)'; }
+    if(lbl) lbl.textContent='Reason for Rejection * (required)';
+    if(submitBtn){ submitBtn.className='btn btn-red'; submitBtn.textContent='Reject Permit →'; }
   }
 }
 
