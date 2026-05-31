@@ -3289,7 +3289,7 @@ function buildView(el, p, log, tests, scans, sigs) {
   if (p.status==='Pending Acceptor' && CU.email===p.originatorEmail)
     acts+=`<button class="btn btn-ghost btn-sm" onclick="openEditPermit('${p.permitNo}')" style="color:var(--blue)">✏️ Edit Permit</button>`;
   if (p.status==='Pending Safety'&&isSaf)
-    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Safety Officer')">✅ Approve (Safety Officer)</button>
+    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Safety')">✅ Approve (Safety Officer)</button>
            <button class="btn btn-red"   onclick="doReject('${p.permitNo}','Safety Officer')">✕ Reject</button>`;
   const isDuty = _roles.includes('Duty Officer')||_roles.includes('Admin');
   if (p.status==='Pending Duty Officer'&&isDuty)
@@ -5380,744 +5380,7 @@ function startLoginAnimation() {
           ctx.beginPath();
           ctx.moveTo(particles[i].x,particles[i].y);
           ctx.lineTo(particles[j].x,particles[j].y);
-          ctx.strokeStyle=`rgba(79,142,247,${.15*(1-dist/100)})`;
-          ctx.stroke();
-        }
-      }
-    }
-    requestAnimationFrame(draw);
-  }
-  draw();
-}
-
-// Animation triggered from goScreen calls
-function _maybeStartLoginAnim(id) {
-  if (id==='login-screen') setTimeout(startLoginAnimation, 150);
-}
-
-
-function updateScanPrefix() {
-  // Year is read directly from select in loadScannerPermit — nothing else needed
-}
-
-</script>
-
-<!-- SIGNATURE APPROVAL MODAL (Acceptor / Safety / Closure) -->
-<div id="sig-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:560px">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="sig-modal-title">Approve Permit</div>
-        <div id="sig-modal-sub" style="font-size:12px;color:var(--slate);margin-top:3px"></div>
-      </div>
-      <button class="modal-close" onclick="closeSigModal()">✕</button>
-    </div>
-
-    <!-- Approve / Reject toggle -->
-    <div id="sig-action-toggle" style="display:flex;gap:8px;margin-bottom:14px">
-      <button id="sig-btn-approve" class="btn btn-green" style="flex:1;justify-content:center" onclick="setSigAction('approve')">✅ Approve</button>
-      <button id="sig-btn-reject" class="btn btn-ghost" style="flex:1;justify-content:center;color:var(--red)" onclick="setSigAction('reject')">✕ Reject</button>
-    </div>
-
-    <!-- After-hours auto-routing note (Safety Officer only) -->
-    <div id="sig-afterhours-note" style="display:none;margin-bottom:12px;padding:10px 14px;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:var(--radius-sm)">
-      <div style="font-size:12px;font-weight:700;color:#4c1d95">⏰ Automatic Duty Officer Check</div>
-      <div style="font-size:11px;color:#6d28d9;margin-top:3px;line-height:1.6">
-        If you approve <strong>after 17:15</strong>, this permit will be <strong>automatically routed</strong> to
-        Duty Officer for endorsement before activation. No manual selection needed.
-      </div>
-    </div>
-    <!-- Comments -->
-    <div class="fg">
-      <label id="sig-comments-label">Comments / Remarks</label>
-      <textarea id="sig-comments" rows="3" placeholder="Enter your comments, conditions, or reason for rejection…"></textarea>
-    </div>
-
-    <!-- Signature Canvas -->
-    <div class="fg">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <label>Your Signature *</label>
-        <button type="button" class="btn btn-ghost btn-xs" onclick="clearSigCanvas()">↺ Clear</button>
-      </div>
-      <div style="position:relative;border:2px solid #e2e8f0;border-radius:var(--radius-sm);background:#fafafa;cursor:crosshair;overflow:hidden">
-        <canvas id="sig-canvas" width="480" height="120" style="display:block;width:100%;touch-action:none"></canvas>
-        <div id="sig-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#94a3b8;font-size:13px">Sign here using mouse or finger</div>
-      </div>
-      <div style="font-size:10px;color:var(--slate);margin-top:4px">Draw your signature in the box above</div>
-    </div>
-
-    <div id="sig-modal-err" class="auth-alert err" style="display:none"><span>⚠️</span><span id="sig-modal-err-txt"></span></div>
-
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeSigModal()">Cancel</button>
-      <button class="btn btn-primary" id="sig-submit-btn" onclick="submitSigModal()">Submit →</button>
-    </div>
-  </div>
-</div>
-
-<!-- INDUCTION SEARCH MODAL -->
-<div id="induction-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:600px">
-    <div class="modal-header">
-      <div class="modal-title">Add Worker from Induction Database</div>
-      <button class="modal-close" onclick="closeInductionModal()">✕</button>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input type="text" id="ind-search" placeholder="Search by name, company or cert no…"
-        style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit"
-        oninput="searchInductees(this.value)">
-      <button class="btn btn-ghost btn-sm" onclick="searchInductees('')">All Active</button>
-    </div>
-    <div style="padding:6px 10px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px">
-      <span style="color:var(--slate)">Adding to:</span> <strong id="ind-modal-target" style="color:var(--blue)">—</strong>
-    </div>
-
-    <div style="font-size:11px;color:var(--slate);margin-bottom:8px">
-      <span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><span style="width:10px;height:10px;background:#dcfce7;border:1px solid #86efac;border-radius:50%;display:inline-block"></span> Valid induction</span>
-      <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#fee2e2;border:1px solid #fca5a5;border-radius:50%;display:inline-block"></span> Expired — cannot be added</span>
-    </div>
-    <div id="ind-results" style="max-height:320px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:var(--radius-sm)">
-      <div style="padding:20px;text-align:center;color:var(--slate);font-size:13px">Type above to search induction records</div>
-    </div>
-    <div id="ind-added-count" style="padding:6px 16px;font-size:12px;color:var(--green);font-weight:700;display:none"></div>
-    <div class="modal-footer">
-      <button class="btn btn-primary" onclick="closeInductionModal()">Done — Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- WORKFLOW MODAL -->
-<div id="workflow-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:640px">
-    <div class="modal-header">
-      <div class="modal-title">Permit Workflow Status</div>
-      <button class="modal-close" onclick="document.getElementById('workflow-modal').classList.remove('open')">✕</button>
-    </div>
-    <div id="workflow-modal-content"></div>
-  </div>
-</div>
-
-<!-- Add Items Modal (Safety adds hazards/PPE) -->
-
-<!-- ADD USER MODAL (Admin only) -->
-<div id="add-user-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:440px">
-    <div class="modal-header">
-      <div class="modal-title">➕ Add New User</div>
-      <button class="modal-close" onclick="document.getElementById('add-user-modal').classList.remove('open')">✕</button>
-    </div>
-    <div id="au-err" class="auth-alert err" style="display:none;margin-bottom:10px"><span>⚠️</span><span id="au-err-txt"></span></div>
-    <div class="fg"><label>Full Name *</label><input type="text" id="au-name" placeholder="Employee full name"></div>
-    <div class="fg"><label>Email Address *</label><input type="email" id="au-email" placeholder="name@hll.com"></div>
-    <div class="fg"><label>Designation</label><input type="text" id="au-desig" placeholder="e.g. Safety Officer"></div>
-    <div class="fg"><label>Department</label><input type="text" id="au-dept" placeholder="e.g. SHE Department"></div>
-    <div class="fg"><label>Card / ID No.</label><input type="text" id="au-card" placeholder="Employee card number"></div>
-    <div class="fg"><label>Roles *</label>
-      <div style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;display:flex;flex-direction:column;gap:6px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Admin" style="accent-color:var(--blue)"> Admin</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Safety Officer" style="accent-color:var(--blue)"> Safety Officer</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Safety Dept" style="accent-color:var(--blue)"> Safety Dept (View only)</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Duty Officer" style="accent-color:var(--blue)"> Duty Officer</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Originator" style="accent-color:var(--blue)" checked> Originator</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Acceptor" style="accent-color:var(--blue)"> Acceptor</label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Job Performer" style="accent-color:var(--blue)"> Job Performer</label>
-      </div>
-    </div>
-    <div class="fg"><label>Initial Password <span style="font-weight:400;font-size:11px;color:var(--slate)">(leave blank — user sets on first login)</span></label>
-      <input type="password" id="au-pw" placeholder="Optional"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('add-user-modal').classList.remove('open')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveNewUser()">Create User</button>
-    </div>
-  </div>
-</div>
-
-<div id="add-items-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:560px">
-    <div class="modal-header">
-      <div class="modal-title" id="aim-title">Add Items</div>
-      <button class="modal-close" onclick="document.getElementById('add-items-modal').classList.remove('open')">✕</button>
-    </div>
-    <p style="font-size:12px;color:var(--slate);margin-bottom:12px">Items added here will be shown separately labelled with your role.</p>
-    <div id="aim-grid" class="ptw-check-grid" style="max-height:320px;overflow-y:auto"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('add-items-modal').classList.remove('open')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveAddedItems()">Save Items</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════
-     ADD DAILY WORK ENTRY MODAL
-     ══════════════════════════════════════════════════════════ -->
-<div id="daily-entry-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:640px;max-height:90vh;display:flex;flex-direction:column">
-    <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e3a5f)">
-      <div>
-        <div class="modal-title" style="color:#fff">📅 Add Daily Work Entry</div>
-        <div style="font-size:11px;color:#93c5fd;margin-top:2px" id="dem-permit-label">Permit loading…</div>
-      </div>
-      <button class="modal-close" style="color:#fff;opacity:.8" onclick="closeAddDailyEntry()">✕</button>
-    </div>
-    <div id="dem-validity-banner" style="display:none;padding:8px 16px;font-size:12px;background:#f0fdf4;border-bottom:1px solid #86efac;color:#14532d"></div>
-    <div id="dem-expired-banner" style="display:none;padding:8px 16px;font-size:12px;background:#fee2e2;border-bottom:1px solid #fca5a5;color:#991b1b">⚠ Permit validity has expired. No new daily entries can be added.</div>
-    <div style="overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px">
-
-      <!-- Date -->
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Work Date *</label>
-        <input type="date" id="dem-date" oninput="demUpdateDayNo()"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;box-sizing:border-box">
-        <div id="dem-day-no-label" style="font-size:12px;color:var(--slate);margin-top:4px"></div>
-      </div>
-
-      <!-- Shifts -->
-      <div>
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Shifts * (select all that apply)</label>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#e2e8f0'">
-            <input type="checkbox" id="dem-shift-morning" value="morning" style="accent-color:var(--blue);width:16px;height:16px">
-            <div><div style="font-size:13px;font-weight:600;color:var(--navy)">🌅 Morning Shift</div><div style="font-size:11px;color:var(--slate)">06:00 – 14:00</div></div>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#e2e8f0'">
-            <input type="checkbox" id="dem-shift-afternoon" value="afternoon" style="accent-color:var(--blue);width:16px;height:16px">
-            <div><div style="font-size:13px;font-weight:600;color:var(--navy)">☀ Afternoon Shift</div><div style="font-size:11px;color:var(--slate)">14:00 – 22:00</div></div>
-          </label>
-          <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#e2e8f0'">
-            <input type="checkbox" id="dem-shift-night" value="night" style="accent-color:var(--blue);width:16px;height:16px">
-            <div><div style="font-size:13px;font-weight:600;color:var(--navy)">🌙 Night Shift</div><div style="font-size:11px;color:var(--slate)">22:00 – 06:00</div></div>
-          </label>
-        </div>
-      </div>
-
-      <!-- Worker search -->
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px">Workers * <span id="dem-worker-count" style="color:var(--blue)"></span></label>
-          <button class="btn btn-ghost btn-xs" onclick="demSearchWorkers(document.getElementById('dem-worker-search').value)">🔄 Refresh</button>
-        </div>
-        <input type="text" id="dem-worker-search" placeholder="Search by name, cert no., contractor…"
-          oninput="demSearchWorkers(this.value)"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;margin-bottom:8px;box-sizing:border-box">
-        <div id="dem-worker-results" style="border:1px solid #e2e8f0;border-radius:var(--radius-sm);max-height:220px;overflow-y:auto">
-          <div style="padding:16px;text-align:center;color:var(--slate);font-size:12px">Loading induction records…</div>
-        </div>
-      </div>
-
-      <!-- Selected workers -->
-      <div id="dem-selected-wrap" style="display:none">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Selected Workers</label>
-        <div id="dem-selected-workers" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-      </div>
-
-      <!-- ── Tool Box Talk ─────────────────────────────────── -->
-      <div style="border-top:1px solid #f1f5f9;padding-top:14px">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          📋 Tool Box Talk (TBT)
-          <span style="font-size:10px;font-weight:400;text-transform:none;color:var(--slate)">(daily — fresh for this day)</span>
-        </label>
-        <div id="dem-tbt-grid" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px">
-          <!-- rendered by renderDemTBT() -->
-        </div>
-        <input type="text" id="dem-tbt-notes" placeholder="TBT notes for this day…"
-          style="width:100%;padding:8px 11px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-size:12px;font-family:inherit;outline:none;box-sizing:border-box">
-      </div>
-
-      <!-- ── Gas Test ───────────────────────────────────────── -->
-      <div style="border-top:1px solid #f1f5f9;padding-top:14px">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          🔬 Gas Test Records
-          <span style="font-size:10px;font-weight:400;text-transform:none;color:var(--slate)">(daily — fresh for this day)</span>
-        </label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:end">
-          <div>
-            <div style="font-size:10px;color:var(--slate);margin-bottom:3px">O₂ (%)</div>
-            <input type="number" id="dem-gt-o2" placeholder="20.9" step="0.1" min="0" max="100"
-              style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--slate);margin-bottom:3px">HC (%LEL)</div>
-            <input type="number" id="dem-gt-hc" placeholder="0" step="0.1" min="0"
-              style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
-          </div>
-          <div>
-            <div style="font-size:10px;color:var(--slate);margin-bottom:3px">Toxic (PPM)</div>
-            <input type="number" id="dem-gt-toxic" placeholder="0" min="0"
-              style="width:100%;padding:8px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit;outline:none">
-          </div>
-          <button onclick="addDemGasReading()"
-            style="padding:8px 12px;background:#0f172a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap">＋ Add</button>
-        </div>
-        <div id="dem-gas-list" style="display:flex;flex-direction:column;gap:4px"></div>
-      </div>
-
-      <div id="dem-err" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;padding:10px 12px;font-size:13px;color:#991b1b"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeAddDailyEntry()">Cancel</button>
-      <button class="btn btn-primary" id="dem-submit-btn" onclick="submitDailyEntry()">📅 Submit Daily Entry →</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ══════════════════════════════════════════════════════════════
-// DAILY WORK ENTRIES — Frontend JavaScript
-// 7-day permit multi-day worker assignment workflow
-// ══════════════════════════════════════════════════════════════
-let _demPermitNo  = '';
-let _demWorkers   = [];
-let _demExpiry    = null;
-let _demActivated = null;
-let _demTBT       = {};   // { a:'Yes', b:'No', c:'N/A', … }
-let _demGasReadings = []; // [ { o2, hc, toxic } ]
-
-function openAddDailyEntry(permitNo) {
-  _demPermitNo  = permitNo;
-  _demWorkers   = [];
-  _demExpiry    = null;
-  _demActivated = null;
-  _demTBT       = {};
-  _demGasReadings = [];
-
-  // Reset all fields
-  const tom = new Date(); tom.setDate(tom.getDate() + 1);
-  const dateEl = document.getElementById('dem-date');
-  if (dateEl) dateEl.value = tom.toISOString().slice(0, 10);
-  ['morning','afternoon','night'].forEach(s => {
-    const cb = document.getElementById('dem-shift-' + s);
-    if (cb) cb.checked = false;
-  });
-  document.getElementById('dem-worker-search').value = '';
-  document.getElementById('dem-worker-results').innerHTML =
-    '<div style="padding:16px;text-align:center;color:var(--slate);font-size:12px"><div class="spinner" style="margin:0 auto 8px;width:20px;height:20px;border-width:3px"></div>Loading induction records…</div>';
-  document.getElementById('dem-selected-wrap').style.display = 'none';
-  document.getElementById('dem-selected-workers').innerHTML = '';
-  document.getElementById('dem-err').style.display = 'none';
-  document.getElementById('dem-worker-count').textContent = '';
-  document.getElementById('dem-validity-banner').style.display = 'none';
-  document.getElementById('dem-expired-banner').style.display = 'none';
-  document.getElementById('dem-permit-label').textContent = permitNo;
-  document.getElementById('dem-day-no-label').textContent = '';
-  const notesEl = document.getElementById('dem-tbt-notes');
-  if (notesEl) notesEl.value = '';
-  ['dem-gt-o2','dem-gt-hc','dem-gt-toxic'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const submitBtn = document.getElementById('dem-submit-btn');
-  if (submitBtn) submitBtn.disabled = false;
-
-  renderDemTBT();
-  renderDemGasReadings();
-  document.getElementById('daily-entry-modal').classList.add('open');
-
-  // Load permit for validity info then auto-search workers
-  api('getPermitByNo', { permitNo }).then(p => {
-    if (!p) return;
-    const ex = p.extras || {};
-    _demExpiry    = ex.expiresAt   ? new Date(ex.expiresAt)   : null;
-    _demActivated = ex.activatedAt ? new Date(ex.activatedAt) : null;
-
-    const now      = new Date();
-    const expired  = _demExpiry && now > _demExpiry;
-    const daysLeft = _demExpiry ? Math.max(0, Math.ceil((_demExpiry - now) / 86400000)) : 7;
-    const dayNo    = _demActivated
-      ? Math.min(7, Math.max(2, Math.ceil((now - _demActivated) / 86400000) + 1))
-      : '?';
-
-    document.getElementById('dem-permit-label').textContent =
-      permitNo + ' · ' + (p.type || '') + ' · ' + (p.workArea || '');
-
-    if (expired) {
-      document.getElementById('dem-expired-banner').style.display = 'block';
-      if (submitBtn) submitBtn.disabled = true;
-    } else {
-      document.getElementById('dem-validity-banner').style.display = 'block';
-      document.getElementById('dem-validity-banner').innerHTML =
-        '📅 Permit valid until <strong>' + fd(_demExpiry) + '</strong> · ' +
-        '<strong>' + daysLeft + '</strong> day(s) remaining · ' +
-        'Currently Day <strong>' + dayNo + '</strong> of 7';
-    }
-    demUpdateDayNo();
-    demSearchWorkers('');
-  }).catch(err => {
-    demSearchWorkers('');
-    console.error('Daily entry modal error:', err);
-  });
-}
-
-// ── TBT helper functions ──────────────────────────────────────
-function renderDemTBT() {
-  const el = document.getElementById('dem-tbt-grid');
-  if (!el) return;
-  el.innerHTML = TBT.map(item => {
-    const val = _demTBT[item.k] || '';
-    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f8fafc;border-radius:5px">
-      <div style="flex:1;font-size:12px;color:var(--navy)">${esc(item.l)}</div>
-      <div style="display:flex;gap:3px">
-        ${['Yes','No','N/A'].map(opt => {
-          const active = val === opt;
-          const col = opt==='Yes'?'#14532d':opt==='No'?'#991b1b':'#475569';
-          const bg  = active ? (opt==='Yes'?'#dcfce7':opt==='No'?'#fee2e2':'#f1f5f9') : '#fff';
-          return `<button onclick="setDemTBT('${item.k}','${opt}')"
-            style="padding:3px 8px;border-radius:4px;border:1.5px solid ${active?col:'#e2e8f0'};background:${bg};color:${active?col:'#94a3b8'};font-size:11px;font-weight:700;cursor:pointer">${opt}</button>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function setDemTBT(key, val) {
-  _demTBT[key] = val;
-  renderDemTBT();
-}
-
-// ── Gas Test helper functions ─────────────────────────────────
-function addDemGasReading() {
-  const o2    = parseFloat(document.getElementById('dem-gt-o2')?.value || '');
-  const hc    = parseFloat(document.getElementById('dem-gt-hc')?.value || '') || 0;
-  const toxic = parseFloat(document.getElementById('dem-gt-toxic')?.value || '') || 0;
-  if (isNaN(o2)) {
-    const errEl = document.getElementById('dem-err');
-    if (errEl) { errEl.textContent = 'Please enter an O₂ reading before adding.'; errEl.style.display = 'block'; }
-    return;
-  }
-  const now = new Date();
-  _demGasReadings.push({
-    o2, hc, toxic,
-    time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
-    by: CU ? CU.name : ''
-  });
-  // Clear inputs
-  ['dem-gt-o2','dem-gt-hc','dem-gt-toxic'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('dem-err').style.display = 'none';
-  renderDemGasReadings();
-}
-
-function removeDemGasReading(idx) {
-  _demGasReadings.splice(idx, 1);
-  renderDemGasReadings();
-}
-
-function renderDemGasReadings() {
-  const el = document.getElementById('dem-gas-list');
-  if (!el) return;
-  if (!_demGasReadings.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--slate);padding:4px 0">No readings added yet.</div>';
-    return;
-  }
-  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:2px">
-    <thead><tr style="background:#f8fafc">
-      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0">O₂%</th>
-      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0">HC%</th>
-      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0">Toxic PPM</th>
-      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0">Time</th>
-      <th style="padding:5px 8px;border:1px solid #e2e8f0"></th>
-    </tr></thead>
-    <tbody>${_demGasReadings.map((r,i) => `<tr>
-      <td style="padding:5px 8px;border:1px solid #e2e8f0;font-weight:700;color:${r.o2>=19.3&&r.o2<=23.5?'#14532d':'#dc2626'}">${r.o2}</td>
-      <td style="padding:5px 8px;border:1px solid #e2e8f0">${r.hc}</td>
-      <td style="padding:5px 8px;border:1px solid #e2e8f0">${r.toxic}</td>
-      <td style="padding:5px 8px;border:1px solid #e2e8f0;color:var(--slate)">${r.time}</td>
-      <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center">
-        <button onclick="removeDemGasReading(${i})" style="border:none;background:none;color:#dc2626;cursor:pointer;font-size:13px">✕</button>
-      </td>
-    </tr>`).join('')}</tbody>
-  </table>`;
-}
-
-function closeAddDailyEntry() {
-  document.getElementById('daily-entry-modal').classList.remove('open');
-}
-
-function demUpdateDayNo() {
-  const el = document.getElementById('dem-day-no-label');
-  if (!el) return;
-  const dateVal = document.getElementById('dem-date')?.value;
-  if (!dateVal) { el.textContent = ''; return; }
-  const parts   = dateVal.split('-');
-  const entryDt = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-  const origin  = _demActivated
-    ? new Date(_demActivated.getFullYear(), _demActivated.getMonth(), _demActivated.getDate())
-    : new Date();
-  const dayNo   = Math.max(2, Math.round((entryDt - origin) / 86400000) + 1);
-  const outOfRange = _demExpiry &&
-    entryDt > new Date(_demExpiry.getFullYear(), _demExpiry.getMonth(), _demExpiry.getDate());
-  el.innerHTML = outOfRange
-    ? '<span style="color:var(--red);font-weight:700">⚠ Date is outside the 7-day validity window</span>'
-    : 'This will be registered as <strong>Day ' + dayNo + '</strong> of the permit';
-}
-
-let _demSearchTimer = null;
-function demSearchWorkers(q) {
-  clearTimeout(_demSearchTimer);
-  _demSearchTimer = setTimeout(() => _demDoSearch(q), 300);
-}
-
-async function _demDoSearch(q) {
-  const el = document.getElementById('dem-worker-results');
-  if (!el) return;
-  el.innerHTML = '<div style="padding:12px;text-align:center"><div class="spinner" style="margin:0 auto;width:20px;height:20px;border-width:3px"></div></div>';
-  try {
-    const records = await api('searchInduction', { search: q || '' });
-    const valid   = (records || []).filter(r => r.valid);
-    if (!valid.length) {
-      el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--slate);font-size:12px">No active induction records found.</div>';
-      return;
-    }
-    el.innerHTML = valid.map(r => {
-      const added = _demWorkers.some(w => w.certNo === r.certNo);
-      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f1f5f9;background:${added?'#f0fdf4':'#fff'}">
-        <div style="width:9px;height:9px;border-radius:50%;background:#10b981;flex-shrink:0"></div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:var(--navy)">${esc(r.name)}</div>
-          <div style="font-size:11px;color:var(--slate)">${esc(r.contractor)} · Cert: <strong>${esc(r.certNo||'—')}</strong> · Valid till: ${esc(r.expiry||'—')}</div>
-        </div>
-        ${added
-          ? `<span style="font-size:11px;color:#14532d;font-weight:700;padding:3px 10px;background:#dcfce7;border-radius:99px">✓ Added</span>`
-          : `<button class="btn btn-green btn-xs" onclick="demAddWorker('${esc(r.name).replace(/'/g,"\\'")}','${esc(r.contractor).replace(/'/g,"\\'")}','${esc(r.certNo||'')}')">＋ Add</button>`
-        }
-      </div>`;
-    }).join('');
-  } catch(e) {
-    el.innerHTML = `<div style="padding:16px;text-align:center;color:var(--red);font-size:12px">Error: ${esc(e.message)}</div>`;
-  }
-}
-
-function demAddWorker(name, contractor, certNo) {
-  if (_demWorkers.some(w => w.certNo === certNo)) return;
-  _demWorkers.push({ name, contractor, certNo });
-  demRenderSelected();
-  _demDoSearch(document.getElementById('dem-worker-search')?.value || '');
-}
-
-function demRemoveWorker(certNo) {
-  _demWorkers = _demWorkers.filter(w => w.certNo !== certNo);
-  demRenderSelected();
-  _demDoSearch(document.getElementById('dem-worker-search')?.value || '');
-}
-
-function demRenderSelected() {
-  const wrap = document.getElementById('dem-selected-wrap');
-  const el   = document.getElementById('dem-selected-workers');
-  const cnt  = document.getElementById('dem-worker-count');
-  if (!_demWorkers.length) {
-    wrap.style.display = 'none';
-    if (cnt) cnt.textContent = '';
-    return;
-  }
-  wrap.style.display = 'block';
-  if (cnt) cnt.textContent = '(' + _demWorkers.length + ' selected)';
-  el.innerHTML = _demWorkers.map(w =>
-    `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:#eff6ff;border:1.5px solid #bfdbfe;font-size:12px">
-      <span style="font-weight:700;color:var(--navy)">${esc(w.name)}</span>
-      <span style="color:var(--slate);font-size:10px">${esc(w.certNo||'—')}</span>
-      <button onclick="demRemoveWorker('${esc(w.certNo)}')" style="border:none;background:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0;line-height:1">✕</button>
-    </span>`
-  ).join('');
-}
-
-async function submitDailyEntry() {
-  const errEl  = document.getElementById('dem-err');
-  errEl.style.display = 'none';
-
-  const date   = document.getElementById('dem-date')?.value || '';
-  const shifts = ['morning','afternoon','night'].filter(s =>
-    document.getElementById('dem-shift-' + s)?.checked
-  );
-  const tbtNotes = document.getElementById('dem-tbt-notes')?.value?.trim() || '';
-
-  if (!date)           { errEl.textContent = 'Please select a work date.'; errEl.style.display = 'block'; return; }
-  if (!shifts.length)  { errEl.textContent = 'Please select at least one shift.'; errEl.style.display = 'block'; return; }
-  if (!_demWorkers.length) { errEl.textContent = 'Please add at least one worker.'; errEl.style.display = 'block'; return; }
-
-  // Build TBT object with notes
-  const tbt = { ..._demTBT, notes: tbtNotes };
-
-  load(true);
-  try {
-    const r = await api('addDailyEntry', {
-      permitNo: _demPermitNo,
-      date,
-      shifts,
-      workers:  _demWorkers,
-      tbt,
-      gasTests: _demGasReadings
-    });
-    load(false);
-    closeAddDailyEntry();
-    toast('Day ' + r.dayNo + ' entry added ✅ — workers must acknowledge before Acceptor approval', 'ok');
-    loadNotifications();
-    setTimeout(() => loadView(_demPermitNo), 800);
-  } catch(e) {
-    load(false);
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-  }
-}
-
-// ── Daily entry approval via existing signature modal ─────────
-function doApproveDailyEntry(permitNo, entryId, role) {
-  openSigModal(
-    role + ' Sign-off — Daily Entry',
-    'Permit ' + permitNo + ' · Daily Work Entry authorisation',
-    permitNo, role,
-    (action, comments) => {
-      load(true);
-      api('approveDailyEntry', { permitNo, entryId, role, action, comments })
-        .then(r => {
-          load(false);
-          const ns = (r && r.newStatus) || '';
-          toast(action === 'approve' ? '✅ Approved — ' + ns : 'Entry rejected', action === 'approve' ? 'ok' : 'warn');
-          loadNotifications();
-          setTimeout(() => loadView(permitNo), 900);
-        })
-        .catch(er => { load(false); toast((er && er.message) || 'Approval failed', 'err'); });
-    }
-  );
-}
-
-// ── Delete a rejected / pending-ack daily entry ───────────────
-async function deleteDailyEntryUI(permitNo, entryId) {
-  if (!confirm('Remove this daily entry? This cannot be undone.')) return;
-  load(true);
-  try {
-    await api('deleteDailyEntry', { permitNo, entryId });
-    load(false);
-    toast('Daily entry removed', 'warn');
-    loadView(permitNo);
-  } catch(e) { load(false); toast(e.message, 'err'); }
-}
-
-// ── Scanner for daily worker acknowledgement ──────────────────
-// Set _dailyScanEntryId before openScannerPage to put scanner
-// in daily-ack mode; cleared when scanner closes.
-function openDailyScanner(permitNo, entryId) {
-  let url = SCRIPT_URL + '?page=scanner';
-  if (permitNo) url += '&permitNo=' + encodeURIComponent(permitNo);
-  if (entryId)  url += '&entryId='  + encodeURIComponent(entryId);
-  window.open(url, '_blank', 'noopener');
-}
-
-// ══════════════════════════════════════════════════════════════
-// SUBSTITUTE ACCEPTOR APPROVAL PAGE
-// Lets a colleague from the same department as the original
-// Permit Acceptor approve Day 2–7 daily entries when the
-// designated acceptor is unavailable.
-// ══════════════════════════════════════════════════════════════
-
-let _subPermitData = null;   // result from getPermitForSubApproval
-
-function loadSubApprovalPage() {
-  const el = document.getElementById('pg-sub-approval');
-  if (!el) return;
-  el.innerHTML = `
-  <div class="ph">
-    <div>
-      <div class="ph-title">🔄 Substitute Acceptor Approval</div>
-      <div class="ph-sub">Search a permit by number · your department is verified automatically</div>
-    </div>
-  </div>
-
-  <!-- Info banner -->
-  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1e40af;line-height:1.6">
-    <strong>How this works:</strong> If the designated Permit Acceptor is unavailable for a Day 2–7 work entry,
-    any colleague from the <strong>same department</strong> as the original Acceptor can approve on their behalf.
-    Search the permit number below — the system will automatically validate your eligibility.
-  </div>
-
-  <!-- Search card -->
-  <div class="card" style="max-width:560px">
-    <div class="form-section-header" style="margin-bottom:14px">
-      <div class="fs-num" style="background:#3b82f6">🔍</div>
-      <div class="fs-title">Search Permit</div>
-    </div>
-
-    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
-      <div style="flex:0 0 auto">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Year</label>
-        <select id="sub-year" style="padding:9px 10px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;background:#fff">
-          ${[new Date().getFullYear(), new Date().getFullYear()-1].map(y=>`<option value="${y}">${y}</option>`).join('')}
-        </select>
-      </div>
-      <div style="flex:1;min-width:120px">
-        <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Permit Number</label>
-        <input type="number" id="sub-permit-suffix" placeholder="e.g. 0012" min="1" max="9999"
-          style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-size:14px;font-weight:700;font-family:inherit;outline:none;box-sizing:border-box"
-          onkeydown="if(event.key==='Enter') searchSubPermit()">
-      </div>
-      <button class="btn btn-primary" onclick="searchSubPermit()" style="white-space:nowrap;padding:9px 20px">🔍 Search</button>
-    </div>
-    <div id="sub-search-err" style="display:none;margin-top:10px;padding:10px 12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:6px;font-size:13px;color:#991b1b"></div>
-  </div>
-
-  <!-- Results area -->
-  <div id="sub-results" style="margin-top:16px"></div>
-  `;
-
-  _subPermitData = null;
-  setTimeout(() => document.getElementById('sub-permit-suffix')?.focus(), 200);
-}
-
-async function searchSubPermit() {
-  const yr     = document.getElementById('sub-year')?.value || new Date().getFullYear();
-  const suffix = (document.getElementById('sub-permit-suffix')?.value || '').trim();
-  const errEl  = document.getElementById('sub-search-err');
-  const resEl  = document.getElementById('sub-results');
-  errEl.style.display = 'none';
-  resEl.innerHTML = '';
-
-  if (!suffix) {
-    errEl.textContent = 'Please enter a permit number suffix.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  const permitNo = 'PTW-' + yr + '-' + suffix.padStart(4, '0');
-  resEl.innerHTML = `<div class="card" style="text-align:center;padding:24px">
-    <div class="spinner" style="margin:0 auto 10px;width:28px;height:28px;border-width:3px"></div>
-    <div style="font-size:13px;color:var(--slate)">Searching ${esc(permitNo)} and validating your eligibility…</div>
-  </div>`;
-
-  try {
-    const r = await api('getPermitForSubApproval', { permitNo });
-    _subPermitData = r;
-    renderSubResults(r);
-  } catch(e) {
-    resEl.innerHTML = '';
-    errEl.textContent = e.message;
-    errEl.style.display = 'block';
-  }
-}
-
-function renderSubResults(r) {
-  const el  = document.getElementById('sub-results');
-  const p   = r.permit;
-  const eu  = r.eligibleUser;
-  const entries = r.pendingEntries || [];
-
-  el.innerHTML = `
-  <!-- Permit summary card -->
-  <div class="card" style="border-left:4px solid #10b981;margin-bottom:14px">
-    <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
-      <div style="flex:1;min-width:200px">
-        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">${esc(p.permitNo)}</div>
-        <div style="font-size:13px;color:var(--navy-mid);margin-bottom:2px">${esc(p.type||'')} · ${esc(p.jobDescription||'')}</div>
-        <div style="font-size:12px;color:var(--slate)">📍 ${esc(p.workArea||'—')}</div>
-      </div>
-      <div style="font-size:12px;color:var(--slate);text-align:right">
-        <div>Originator: <strong>${esc(p.originatorName||'—')}</strong></div>
-        <div style="margin-top:3px">Designated Acceptor: <strong>${esc(p.acceptorName||'—')}</strong></div>
-        <div style="margin-top:3px;color:#1e40af">Acceptor Dept: <strong>${esc(p.acceptorDept||'—')}</strong></div>
-      </div>
-    </div>
-    ${p.expiresAt?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--slate)">
-      Permit valid: ${fd(p.activatedAt)} → <strong>${fd(p.expiresAt)}</strong>
-    </div>`:''}
+          ctx.strokeStyle=`rgba(79,142,247,
   </div>
 
   <!-- Eligibility confirmation -->
@@ -6237,6 +5500,83 @@ async function submitSubApproval(permitNo, entryId, action) {
     else toast(e.message, 'err');
   }
 }
+
+
+// ── LOGIN PAGE ANIMATED BACKGROUND ─────────────────────────
+function startLoginAnimation() {
+  const canvas = document.getElementById('login-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  const particles = Array.from({length:60}, ()=>({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    r:Math.random()*2.5+.5, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4,
+    alpha:Math.random()*.6+.1,
+    color:['#4f8ef7','#a78bfa','#22d3a0','#fbbf24'][Math.floor(Math.random()*4)]
+  }));
+  const orbs=[
+    {x:.2,y:.3,r:320,color:'rgba(79,142,247,.15)',vx:.00015,vy:.0001},
+    {x:.8,y:.7,r:280,color:'rgba(167,139,250,.12)',vx:-.0001,vy:.00012},
+    {x:.5,y:.9,r:260,color:'rgba(34,211,160,.10)',vx:.00008,vy:-.00015}
+  ];
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height); t+=.005;
+    for(const o of orbs){
+      const cx=(o.x+Math.sin(t*o.vx*200)*.08)*canvas.width;
+      const cy=(o.y+Math.cos(t*o.vy*200)*.06)*canvas.height;
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,o.r);
+      g.addColorStop(0,o.color); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,o.r,0,Math.PI*2); ctx.fill();
+    }
+    for(const p of particles){
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.color; ctx.globalAlpha=p.alpha*(0.7+0.3*Math.sin(t*2+p.x*.01));
+      ctx.fill(); ctx.globalAlpha=1;
+    }
+    ctx.lineWidth=.4;
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<100){
+          ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y);
+          ctx.lineTo(particles[j].x,particles[j].y);
+          ctx.strokeStyle='rgba(79,142,247,'+(0.15*(1-dist/100))+')';
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function _maybeStartLoginAnim(id) {
+  if (id==='login-screen') setTimeout(startLoginAnimation, 150);
+}
+
+function updateScanPrefix() {}
+
+function openScannerInNewTab() {
+  const base = window.location.href.replace(/[^/]*$/, '');
+  const url = base + 'scanner.html';
+  const a = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+
+}
+}
+}
+}
+
 </script>
 
 </body>
