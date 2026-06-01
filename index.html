@@ -356,6 +356,7 @@ tbody tr:last-child td { border-bottom:none; }
 .tl-role { font-size:13px; font-weight:700; color:var(--navy); }
 .tl-name { font-size:12px; color:var(--slate); margin-top:1px; }
 .tl-time { font-size:11px; color:var(--slate); margin-top:2px; }
+.tl-action { font-size:11px; font-weight:600; color:var(--navy-mid); margin-top:2px; }
 .tl-comment { font-size:12px; color:var(--navy-light); background:var(--bg); border-radius:var(--radius-sm); padding:6px 10px; margin-top:6px; border-left:3px solid var(--border); }
 
 /* Two-col layout */
@@ -3851,6 +3852,7 @@ function buildView(el, p, log, tests, scans, sigs) {
           ${ex.dutyOfficerRequired?tlStep('⏱','Duty Officer',ex.dutyOfficerName||'','After-hours Endorsement',ex.dutyOfficerSignTime||null,!!ex.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
           ${tlStep('▶','Job Performer','','Work Started (Sign)',p.jobStartTime,!!p.jobStartTime,p.status==='Active'&&!p.jobStartTime)}
           ${tlStep('⏹','Job Performer','','Work Stopped (Sign)',p.jobStopTime,!!p.jobStopTime,p.status==='Active'&&!!p.jobStartTime&&!p.jobStopTime)}
+          ${p.status==='Pending Duty Officer'||p.safetySignTime?tlStep('👔','Duty Officer',p.dutyOfficerName||'—','Endorsed',p.dutyOfficerSignTime,!!p.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
           ${tlStep('🔏','Closure','','Permit Closed',p.status==='Closed'?p.updatedAt:null,p.status==='Closed',p.status==='Pending Closure')}
         </div>
       </div>
@@ -3887,9 +3889,10 @@ function tlStep(ic, role, name, action, time, done, isActive) {
   return `<div class="tl-item">
     <div class="tl-dot ${cls}">${icon}</div>
     <div class="tl-body">
-      <div class="tl-role">${role}</div>
-      ${name?`<div class="tl-name">${esc(name)}</div>`:''}
-      <div class="tl-time" style="color:${isActive?'var(--amber)':''}">${action}${time?' · '+fd(time):isActive?' · Awaiting…':''}</div>
+      <div class="tl-role">${esc(role)}</div>
+      ${name?`<div class="tl-name">${esc(name)}</div>`:'<div class="tl-name" style="color:var(--slate);font-style:italic">—</div>'}
+      <div class="tl-action">${esc(action)}</div>
+      ${time?`<div class="tl-time">${fd(time)}</div>`:isActive?`<div class="tl-time" style="color:var(--amber)">Awaiting…</div>`:''}
     </div>
   </div>`;
 }
