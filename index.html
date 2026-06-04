@@ -3417,12 +3417,12 @@ function buildView(el, p, log, tests, scans, sigs) {
 
   // ── 7-Day Daily Entries pre-calculations ──────────────────
   const _dailyEntries    = ex.dailyEntries || [];
+  const _pendingDailyAcc = _dailyEntries.find(e => e.status === 'Pending Acceptor');
+  const _pendingDailySaf = _dailyEntries.find(e => e.status === 'Pending Safety');
   const _activatedAt     = ex.activatedAt  ? new Date(ex.activatedAt) : null;
   const _expiresAt       = ex.expiresAt    ? new Date(ex.expiresAt)   : null;
   const _permitExpired   = _expiresAt && new Date() > _expiresAt;
   const _daysElapsed     = _activatedAt ? Math.min(7, Math.max(1, Math.ceil((new Date() - _activatedAt) / 86400000))) : 1;
-  const _pendingDailyAcc = _dailyEntries.find(e => e.status === 'Pending Acceptor');
-  const _pendingDailySaf = _dailyEntries.find(e => e.status === 'Pending Safety');
   const _pendingDailyAck = _dailyEntries.find(e => e.status === 'Pending Worker Acknowledgement');
   // ──────────────────────────────────────────────────────────
 
