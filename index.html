@@ -3324,6 +3324,14 @@ function buildView(el, p, log, tests, scans, sigs) {
   });
 
   // Action buttons
+  const _dailyEntries    = ex.dailyEntries || [];
+  const _pendingDailyAcc = _dailyEntries.find(e => e.status === 'Pending Acceptor');
+  const _pendingDailySaf = _dailyEntries.find(e => e.status === 'Pending Safety');
+  const _activatedAt     = ex.activatedAt  ? new Date(ex.activatedAt) : null;
+  const _expiresAt       = ex.expiresAt    ? new Date(ex.expiresAt)   : null;
+  const _permitExpired   = _expiresAt && new Date() > _expiresAt;
+  const _daysElapsed     = _activatedAt ? Math.min(7, Math.max(1, Math.ceil((new Date() - _activatedAt) / 86400000))) : 1;
+  const _pendingDailyAck = _dailyEntries.find(e => e.status === 'Pending Worker Acknowledgement');
   let acts='';
   if (p.status==='Pending Acceptor'&&isAcc)
     acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Acceptor')">Approve</button>
@@ -3416,14 +3424,6 @@ function buildView(el, p, log, tests, scans, sigs) {
   const approvalComments=ex.approvalComments||[];
 
   // ── 7-Day Daily Entries pre-calculations ──────────────────
-  const _dailyEntries    = ex.dailyEntries || [];
-  const _pendingDailyAcc = _dailyEntries.find(e => e.status === 'Pending Acceptor');
-  const _pendingDailySaf = _dailyEntries.find(e => e.status === 'Pending Safety');
-  const _activatedAt     = ex.activatedAt  ? new Date(ex.activatedAt) : null;
-  const _expiresAt       = ex.expiresAt    ? new Date(ex.expiresAt)   : null;
-  const _permitExpired   = _expiresAt && new Date() > _expiresAt;
-  const _daysElapsed     = _activatedAt ? Math.min(7, Math.max(1, Math.ceil((new Date() - _activatedAt) / 86400000))) : 1;
-  const _pendingDailyAck = _dailyEntries.find(e => e.status === 'Pending Worker Acknowledgement');
   // ──────────────────────────────────────────────────────────
 
   el.innerHTML=`
