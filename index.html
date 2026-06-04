@@ -1987,7 +1987,7 @@ async function renderForm() {
         <!-- Helper text -->
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#1e40af;line-height:1.6">
           <strong>📋 Originator's Action:</strong> Collect the applicable supporting permits from the
-          Safety &amp; Environment Department, complete the required approvals, and update the
+          Safety &amp; Environment Department, complete the approvals, and update the
           corresponding permit serial numbers below.
         </div>
         <div class="ptw-sup-grid">
@@ -2263,10 +2263,10 @@ async function renderForm() {
             <span style="font-size:11px;font-weight:700;color:var(--slate)">Auto-detected shifts:</span>
             <div id="we-shift-badges" style="display:flex;gap:5px;flex-wrap:wrap"></div>
             <div id="we-duty-warn" style="display:none;padding:4px 10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;font-size:11px;color:#6d28d9;font-weight:700">
-              ⚠️ Duty Officer approval required (beyond 17:15)
+              ⚠️ Duty Officer approval (beyond 17:15)
             </div>
             <div id="we-shift3-warn" style="display:none;padding:4px 10px;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;font-size:11px;color:#92400e;font-weight:700">
-              🌙 Shift 3 (22:00–06:00) — Duty Officer required
+              🌙 Shift 3 (22:00–06:00) — Duty Officer
             </div>
           </div>
         </div>
@@ -3391,7 +3391,7 @@ function buildView(el, p, log, tests, scans, sigs) {
       <div class="ph-sub">${esc(p.type)||'—'} · ${sbadge(p.status)} · Valid: ${fd(p.validFrom)} → ${fd(p.validTo)}</div>
     </div>
     <div class="btn-group">
-      <button class="btn btn-ghost" onclick="history.back()">← Back</button>
+      <button class="btn btn-ghost" onclick="nav(CU&&(CU.roles||[CU.role]).some(r=>['Admin','Safety','Safety Officer','Acceptor','Duty Officer'].includes(r))?'all-permits':'my-permits')">← Back</button>
       ${acts}
     </div>
   </div>
@@ -4498,7 +4498,8 @@ async function searchInductees(q) {
   el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--slate)"><div class="spinner" style="margin:0 auto;width:22px;height:22px;border-width:3px"></div></div>';
   try {
     const records = await api('searchInduction', { search: q || '' });
-    if (!records || !records.length) {
+    const recs = Array.isArray(records) ? records : (records?.results||[]);
+    if (!recs.length) {
       el.innerHTML = `<div style="padding:20px;text-align:center">
         <div style="font-size:32px;margin-bottom:8px">🔍</div>
         <div style="font-size:13px;color:var(--slate);margin-bottom:6px">No induction records found</div>
@@ -4506,8 +4507,8 @@ async function searchInductees(q) {
       </div>`;
       return;
     }
-    const valid   = records.filter(r => r.valid);
-    const expired = records.filter(r => !r.valid);
+    const valid   = recs.filter(r => r.valid);
+    const expired = recs.filter(r => !r.valid);
     const activeEntry = _workEntries.find(e=>e.id===_activeEntry);
   const alreadyAdded = r => activeEntry && activeEntry.workers.some(w=>w.certNo===r.certNo&&w.name===r.name);
   const makeRow = r => {
@@ -4592,8 +4593,6 @@ function _handleCameraError() { /* no-op */ }
 function showManualCertInput(){ /* no-op */ }
 function lookupManualCert()   { /* no-op */ }
 function onQRScanned()        { /* no-op */ }
-function openScannerInNewTab(){ openScannerPage(''); }
-
 // TBT 7-day data store
 // ══════════════════════════════════════════════════════════════
 let _tbtDayData={};   // stores per-day TBT state: {1:{a:'Yes',b:'No',...,notes:''}}
@@ -5462,49 +5461,6 @@ function startLoginAnimation() {
   </div>`;
 }
 
-async function submitSubApproval(permitNo, entryId, action) {
-  const comments = document.getElementById('sub-comments-' + entryId)?.value?.trim() || '';
-  const errEl    = document.getElementById('sub-entry-err-' + entryId);
-  if (errEl) errEl.style.display = 'none';
-
-  if (action === 'reject' && !comments) {
-    if (errEl) { errEl.textContent = 'A reason is required when rejecting.'; errEl.style.display = 'block'; }
-    return;
-  }
-
-  const confirmMsg = action === 'approve'
-    ? 'Confirm: you are approving this daily entry as a substitute for the designated Acceptor. This will be logged in the audit trail.'
-    : 'Confirm: you are rejecting this daily entry. This cannot be undone.';
-  if (!confirm(confirmMsg)) return;
-
-  load(true);
-  try {
-    const r = await api('substituteAcceptorApprove', { permitNo, entryId, action, comments });
-    load(false);
-    toast(
-      action === 'approve'
-        ? '✅ Day approved — now Pending Safety Officer'
-        : 'Entry rejected',
-      action === 'approve' ? 'ok' : 'warn'
-    );
-    loadNotifications();
-    // Remove approved entry card from UI
-    const card = document.getElementById('sub-entry-' + entryId);
-    if (card) {
-      card.style.opacity = '0.5';
-      card.style.pointerEvents = 'none';
-      card.innerHTML = `<div style="padding:16px;text-align:center;font-size:13px;color:var(--slate)">${action==='approve'?'✅ Approved — forwarded to Safety Officer':'✕ Rejected'}</div>`;
-    }
-    // Refresh after 1.5s to show updated state
-    setTimeout(() => searchSubPermit().catch(() => {}), 1500);
-  } catch(e) {
-    load(false);
-    if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
-    else toast(e.message, 'err');
-  }
-}
-
-
 // ── LOGIN PAGE ANIMATED BACKGROUND ─────────────────────────
 function startLoginAnimation() {
   const canvas = document.getElementById('login-canvas');
@@ -5560,10 +5516,6 @@ function startLoginAnimation() {
   draw();
 }
 
-function _maybeStartLoginAnim(id) {
-  if (id==='login-screen') setTimeout(startLoginAnimation, 150);
-}
-
 function updateScanPrefix() {}
 
 function openScannerInNewTab() {
@@ -5573,6 +5525,83 @@ function openScannerInNewTab() {
   a.href = url; a.target = '_blank'; a.rel = 'noopener';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
+
+
+
+// ── SUBSTITUTE APPROVAL PAGE ─────────────────────────────────
+async function loadSubApprovalPage() {
+  const el = document.getElementById('pg-sub-approval');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+  try {
+    const raw = await api('getPermitForSubApproval', {});
+    const permits = Array.isArray(raw) ? raw : (raw?.permits||[]);
+    if (!permits.length) {
+      el.innerHTML = '<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">No permits pending substitute approval</div></div>';
+      return;
+    }
+    el.innerHTML = '<div class="ph"><div><div class="ph-title">Substitute Approval</div><div class="ph-sub">' + permits.length + ' permit(s) pending your sign-off</div></div></div>' +
+      '<div id="sub-list">' + permits.map(p => `
+        <div class="card" id="sub-entry-${p.permitNo}" style="margin-bottom:12px">
+          <div class="card-header"><div><div class="ph-title">${esc(p.permitNo)}</div><div class="ph-sub">${esc(p.type)} · ${sbadge(p.status)}</div></div></div>
+          <div style="padding:14px 18px">
+            <div class="detail-grid">
+              <div><div class="det-lbl">Work Area</div><div class="det-val">${esc(p.workArea||'—')}</div></div>
+              <div><div class="det-lbl">Originator</div><div class="det-val">${esc(p.originatorName||'—')}</div></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn btn-green btn-sm" onclick="submitSubApproval('${p.permitNo}','approve',this)">✅ Approve</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="submitSubApproval('${p.permitNo}','reject',this)">✕ Reject</button>
+            </div>
+            <div class="alert alert-error" id="sub-err-${p.permitNo}" style="display:none;margin-top:8px"></div>
+          </div>
+        </div>`).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="card"><div class="alert alert-error">❌ ' + e.message + '</div></div>';
+  }
+}
+
+async function submitSubApproval(permitNo, action, btn) {
+  const errEl = document.getElementById('sub-err-' + permitNo);
+  const comments = prompt(action === 'approve' ? 'Comments (optional):' : 'Reason for rejection (required):') || '';
+  if (action === 'reject' && !comments.trim()) { if(errEl){errEl.textContent='Rejection reason required.';errEl.style.display='block';} return; }
+  load(true, action === 'approve' ? 'Approving…' : 'Rejecting…');
+  try {
+    await api('approvePermit', { permitNo, role: action === 'approve' ? 'Acceptor' : 'Acceptor', action, comments });
+    load(false);
+    const card = document.getElementById('sub-entry-' + permitNo);
+    if (card) { card.style.opacity='0.5'; card.style.pointerEvents='none'; card.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--slate)">' + (action==='approve'?'✅ Approved':'✕ Rejected') + '</div>'; }
+    setTimeout(() => loadSubApprovalPage(), 1500);
+  } catch(e) {
+    load(false);
+    if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+    else toast(e.message, 'err');
+  }
+}
+
+// ── LOGIN ANIMATION ───────────────────────────────────────────
+function startLoginAnimation() {
+  const canvas = document.getElementById('login-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  const pts = Array.from({length:55},()=>({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    r:Math.random()*2+.5, vx:(Math.random()-.5)*.45, vy:(Math.random()-.5)*.45,
+    a:Math.random()*.5+.1, col:['#4f8ef7','#a78bfa','#22d3a0','#fbbf24'][Math.floor(Math.random()*4)]
+  }));
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height); t+=.005;
+    const orbs=[{x:.15,y:.25,r:340,c:'rgba(37,99,235,.18)'},{x:.85,y:.75,r:290,c:'rgba(124,58,237,.14)'},{x:.5,y:.95,r:270,c:'rgba(5,150,105,.12)'}];
+    for(const o of orbs){ const g=ctx.createRadialGradient(o.x*canvas.width,o.y*canvas.height,0,o.x*canvas.width,o.y*canvas.height,o.r); g.addColorStop(0,o.c); g.addColorStop(1,'transparent'); ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height); }
+    for(const p of pts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0; if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=p.col; ctx.globalAlpha=p.a*(0.7+0.3*Math.sin(t*2+p.x*.01)); ctx.fill(); ctx.globalAlpha=1; }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+function _maybeStartLoginAnim(id){ if(id==='login-screen') setTimeout(startLoginAnimation,200); }
 
 
 }
