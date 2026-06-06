@@ -1210,6 +1210,25 @@ tbody tr:last-child td { border-bottom:none; }
   </div>
 </div>
 
+<!-- ══ INDUCTION SEARCH MODAL ══ --><!-- ══ INDUCTION SEARCH MODAL ══ -->
+<div id="ind-modal" class="modal-bg">
+  <div class="modal" style="max-width:520px;width:100%">
+    <div class="modal-header">
+      <div class="modal-title">Add Worker from Induction Database</div>
+      <button class="modal-close" onclick="document.getElementById('ind-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div class="search-input" style="flex:1"><input type="text" id="ind-search" placeholder="Search by name or certificate no…" oninput="searchInductees(this.value)" autofocus></div>
+        <button class="btn btn-primary btn-sm" onclick="searchInductees(document.getElementById('ind-search').value)">Search</button>
+      </div>
+      <div id="ind-results" style="max-height:340px;overflow-y:auto;min-height:60px">
+        <div style="padding:20px;text-align:center;color:var(--slate);font-size:13px">Type a name or certificate number to search</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SIGNATURE MODAL ══ -->
 <div id="sig-modal" class="modal-bg">
   <div class="modal" style="max-width:540px;width:100%">
@@ -5414,294 +5433,61 @@ function startLoginAnimation() {
   const canvas = document.getElementById('login-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-
   function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
-  resize();
-  window.addEventListener('resize', resize);
-
-  // Particles
-  const particles = Array.from({length:60}, ()=>({
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    r: Math.random()*2.5+.5,
-    vx: (Math.random()-.5)*.4,
-    vy: (Math.random()-.5)*.4,
-    alpha: Math.random()*.6+.1,
-    color: ['#4f8ef7','#a78bfa','#22d3a0','#fbbf24'][Math.floor(Math.random()*4)]
-  }));
-
-  // Flowing orbs
-  const orbs = [
-    {x:.2, y:.3, r:320, color:'rgba(79,142,247,.15)', vx:.00015, vy:.0001},
-    {x:.8, y:.7, r:280, color:'rgba(167,139,250,.12)', vx:-.0001, vy:.00012},
-    {x:.5, y:.9, r:260, color:'rgba(34,211,160,.10)',  vx:.00008, vy:-.00015},
-  ];
-  let t=0;
-
-  function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    t += .005;
-
-    // Animated orbs
-    for (const o of orbs) {
-      const cx = (o.x + Math.sin(t*o.vx*200)*.08) * canvas.width;
-      const cy = (o.y + Math.cos(t*o.vy*200)*.06) * canvas.height;
-      const g = ctx.createRadialGradient(cx,cy,0,cx,cy,o.r);
-      g.addColorStop(0, o.color);
-      g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(cx,cy,o.r,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    // Particles
-    for (const p of particles) {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x<0) p.x=canvas.width; if (p.x>canvas.width) p.x=0;
-      if (p.y<0) p.y=canvas.height; if (p.y>canvas.height) p.y=0;
-      ctx.beginPath();
-      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.alpha*(0.7+0.3*Math.sin(t*2+p.x*.01));
-      ctx.fill();
-      ctx.globalAlpha=1;
-    }
-
-    // Connection lines between nearby particles
-    ctx.lineWidth=.4;
-    for (let i=0;i<particles.length;i++) {
-      for (let j=i+1;j<particles.length;j++) {
-        const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if (dist<100) {
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x,particles[i].y);
-          ctx.lineTo(particles[j].x,particles[j].y);
-          ctx.strokeStyle=`rgba(79,142,247,
-  </div>
-
-  <!-- Eligibility confirmation -->
-  <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
-    <span style="font-size:24px">✅</span>
-    <div>
-      <div style="font-size:13px;font-weight:700;color:#14532d">You are eligible to provide substitute approval</div>
-      <div style="font-size:12px;color:#166534;margin-top:2px">
-        <strong>${esc(eu.name)}</strong>${eu.designation?' · '+esc(eu.designation):''} · 
-        Department: <strong>${esc(eu.department)}</strong>
-        &nbsp;=&nbsp; Acceptor's department ✓
-      </div>
-    </div>
-  </div>
-
-  <!-- Pending daily entries -->
-  <div class="card">
-    <div class="form-section-header" style="margin-bottom:14px">
-      <div class="fs-num" style="background:#f59e0b">${entries.length}</div>
-      <div class="fs-title">Daily Entr${entries.length===1?'y':'ies'} Pending Your Approval</div>
-    </div>
-
-    ${entries.map(de => `
-    <div style="border:1.5px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:14px" id="sub-entry-${de.entryId}">
-      <!-- Entry header -->
-      <div style="background:#fef3c7;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:16px;font-weight:800;color:#92400e">Day ${de.dayNo}</span>
-          <span style="font-size:13px;color:var(--navy);font-weight:600">${de.dateLabel||de.date}</span>
-          <span style="font-size:11px;padding:2px 8px;border-radius:99px;background:#92400e;color:#fff;font-weight:700">⏳ Pending Acceptor</span>
-        </div>
-        <div style="font-size:11px;color:var(--slate)">${(de.shiftLabels||de.shifts||[]).join(' · ')}</div>
-      </div>
-
-      <!-- Workers -->
-      <div style="padding:14px 16px;background:#fff">
-        <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Workers (${de.workers.length})</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-          ${(de.workers||[]).map(w=>`
-          <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;background:${w.acked?'#f0fdf4':'#f8fafc'};border:1px solid ${w.acked?'#86efac':'#e2e8f0'};font-size:11px">
-            <span style="width:7px;height:7px;border-radius:50%;background:${w.acked?'#10b981':'#94a3b8'}"></span>
-            <span style="font-weight:600;color:var(--navy)">${esc(w.name||'?')}</span>
-            <span style="color:var(--slate)">${esc(w.certNo||'—')}</span>
-            ${w.acked?`<span style="color:#10b981;font-weight:700;font-size:10px">✓</span>`:''}
-          </span>`).join('')}
-        </div>
-
-        <!-- Ack status note -->
-        <div style="background:#f8fafc;border-radius:6px;padding:8px 12px;font-size:12px;color:var(--slate);margin-bottom:12px">
-          Worker acknowledgements: <strong>${de.workerAckCount||0} / ${de.workerAckTotal||de.workers.length}</strong> confirmed
-        </div>
-
-        <!-- Substitute notice -->
-        <div style="background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:8px 12px;font-size:12px;color:#713f12;margin-bottom:12px">
-          ⚠ You are approving as a <strong>substitute</strong> for the designated Acceptor 
-          <strong>${esc(p.acceptorName)}</strong>. This will be recorded in the audit trail.
-        </div>
-
-        <!-- Comments + action buttons -->
-        <div>
-          <label style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">Remarks (optional for approval, required for rejection)</label>
-          <textarea id="sub-comments-${de.entryId}" rows="2" placeholder="Add any remarks for the record…"
-            style="width:100%;padding:8px 11px;border:1.5px solid #e2e8f0;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;resize:none;box-sizing:border-box"></textarea>
-          <div id="sub-entry-err-${de.entryId}" style="display:none;font-size:12px;color:var(--red);margin-top:4px"></div>
-          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-            <button class="btn btn-green" onclick="submitSubApproval('${p.permitNo}','${de.entryId}','approve')">
-              ✅ Approve — Day ${de.dayNo}
-            </button>
-            <button class="btn btn-red" style="background:#fff;color:var(--red);border:1.5px solid var(--red)" onclick="submitSubApproval('${p.permitNo}','${de.entryId}','reject')">
-              ✕ Reject
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>`).join('')}
-  </div>`;
-}
-
-// ── LOGIN PAGE ANIMATED BACKGROUND ─────────────────────────
-function startLoginAnimation() {
-  const canvas = document.getElementById('login-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
-  resize();
-  window.addEventListener('resize', resize);
-  const particles = Array.from({length:60}, ()=>({
+  resize(); window.addEventListener('resize', resize);
+  const pts = Array.from({length:50},()=>({
     x:Math.random()*canvas.width, y:Math.random()*canvas.height,
-    r:Math.random()*2.5+.5, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4,
-    alpha:Math.random()*.6+.1,
-    color:['#4f8ef7','#a78bfa','#22d3a0','#fbbf24'][Math.floor(Math.random()*4)]
+    r:Math.random()*2+.5, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4,
+    a:Math.random()*.5+.1, c:['#4f8ef7','#a78bfa','#22d3a0'][Math.floor(Math.random()*3)]
   }));
-  const orbs=[
-    {x:.2,y:.3,r:320,color:'rgba(79,142,247,.15)',vx:.00015,vy:.0001},
-    {x:.8,y:.7,r:280,color:'rgba(167,139,250,.12)',vx:-.0001,vy:.00012},
-    {x:.5,y:.9,r:260,color:'rgba(34,211,160,.10)',vx:.00008,vy:-.00015}
-  ];
   let t=0;
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height); t+=.005;
-    for(const o of orbs){
-      const cx=(o.x+Math.sin(t*o.vx*200)*.08)*canvas.width;
-      const cy=(o.y+Math.cos(t*o.vy*200)*.06)*canvas.height;
-      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,o.r);
-      g.addColorStop(0,o.color); g.addColorStop(1,'transparent');
-      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,o.r,0,Math.PI*2); ctx.fill();
-    }
-    for(const p of particles){
+    for(const p of pts){
       p.x+=p.vx; p.y+=p.vy;
       if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0;
       if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0;
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle=p.color; ctx.globalAlpha=p.alpha*(0.7+0.3*Math.sin(t*2+p.x*.01));
+      ctx.fillStyle=p.c; ctx.globalAlpha=p.a*(0.7+0.3*Math.sin(t*2+p.x*.01));
       ctx.fill(); ctx.globalAlpha=1;
     }
-    ctx.lineWidth=.4;
-    for(let i=0;i<particles.length;i++){
-      for(let j=i+1;j<particles.length;j++){
-        const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<100){
-          ctx.beginPath(); ctx.moveTo(particles[i].x,particles[i].y);
-          ctx.lineTo(particles[j].x,particles[j].y);
-          ctx.strokeStyle='rgba(79,142,247,'+(0.15*(1-dist/100))+')';
-          ctx.stroke();
-        }
-      }
-    }
     requestAnimationFrame(draw);
   }
   draw();
 }
 
-function updateScanPrefix() {}
-
-function openScannerInNewTab() {
-  const base = window.location.href.replace(/[^/]*$/, '');
-  const url = base + 'scanner.html';
-  const a = document.createElement('a');
-  a.href = url; a.target = '_blank'; a.rel = 'noopener';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-}
-
-
-
-// ── SUBSTITUTE APPROVAL PAGE ─────────────────────────────────
-async function loadSubApprovalPage() {
-  const el = document.getElementById('pg-sub-approval');
-  if (!el) return;
-  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
-  try {
-    const raw = await api('getPermitForSubApproval', {});
-    const permits = Array.isArray(raw) ? raw : (raw?.permits||[]);
-    if (!permits.length) {
-      el.innerHTML = '<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">No permits pending substitute approval</div></div>';
-      return;
-    }
-    el.innerHTML = '<div class="ph"><div><div class="ph-title">Substitute Approval</div><div class="ph-sub">' + permits.length + ' permit(s) pending your sign-off</div></div></div>' +
-      '<div id="sub-list">' + permits.map(p => `
-        <div class="card" id="sub-entry-${p.permitNo}" style="margin-bottom:12px">
-          <div class="card-header"><div><div class="ph-title">${esc(p.permitNo)}</div><div class="ph-sub">${esc(p.type)} · ${sbadge(p.status)}</div></div></div>
-          <div style="padding:14px 18px">
-            <div class="detail-grid">
-              <div><div class="det-lbl">Work Area</div><div class="det-val">${esc(p.workArea||'—')}</div></div>
-              <div><div class="det-lbl">Originator</div><div class="det-val">${esc(p.originatorName||'—')}</div></div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:12px">
-              <button class="btn btn-green btn-sm" onclick="submitSubApproval('${p.permitNo}','approve',this)">✅ Approve</button>
-              <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="submitSubApproval('${p.permitNo}','reject',this)">✕ Reject</button>
-            </div>
-            <div class="alert alert-error" id="sub-err-${p.permitNo}" style="display:none;margin-top:8px"></div>
-          </div>
-        </div>`).join('') + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div class="card"><div class="alert alert-error">❌ ' + e.message + '</div></div>';
-  }
-}
-
-async function submitSubApproval(permitNo, action, btn) {
-  const errEl = document.getElementById('sub-err-' + permitNo);
-  const comments = prompt(action === 'approve' ? 'Comments (optional):' : 'Reason for rejection (required):') || '';
-  if (action === 'reject' && !comments.trim()) { if(errEl){errEl.textContent='Rejection reason required.';errEl.style.display='block';} return; }
-  load(true, action === 'approve' ? 'Approving…' : 'Rejecting…');
-  try {
-    await api('approvePermit', { permitNo, role: action === 'approve' ? 'Acceptor' : 'Acceptor', action, comments });
-    load(false);
-    const card = document.getElementById('sub-entry-' + permitNo);
-    if (card) { card.style.opacity='0.5'; card.style.pointerEvents='none'; card.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--slate)">' + (action==='approve'?'✅ Approved':'✕ Rejected') + '</div>'; }
-    setTimeout(() => loadSubApprovalPage(), 1500);
-  } catch(e) {
-    load(false);
-    if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
-    else toast(e.message, 'err');
-  }
-}
-
-// ── LOGIN ANIMATION ───────────────────────────────────────────
-function startLoginAnimation() {
-  const canvas = document.getElementById('login-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
-  resize(); window.addEventListener('resize', resize);
-  const pts = Array.from({length:55},()=>({
-    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
-    r:Math.random()*2+.5, vx:(Math.random()-.5)*.45, vy:(Math.random()-.5)*.45,
-    a:Math.random()*.5+.1, col:['#4f8ef7','#a78bfa','#22d3a0','#fbbf24'][Math.floor(Math.random()*4)]
-  }));
-  let t=0;
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height); t+=.005;
-    const orbs=[{x:.15,y:.25,r:340,c:'rgba(37,99,235,.18)'},{x:.85,y:.75,r:290,c:'rgba(124,58,237,.14)'},{x:.5,y:.95,r:270,c:'rgba(5,150,105,.12)'}];
-    for(const o of orbs){ const g=ctx.createRadialGradient(o.x*canvas.width,o.y*canvas.height,0,o.x*canvas.width,o.y*canvas.height,o.r); g.addColorStop(0,o.c); g.addColorStop(1,'transparent'); ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height); }
-    for(const p of pts){ p.x+=p.vx; p.y+=p.vy; if(p.x<0)p.x=canvas.width; if(p.x>canvas.width)p.x=0; if(p.y<0)p.y=canvas.height; if(p.y>canvas.height)p.y=0; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=p.col; ctx.globalAlpha=p.a*(0.7+0.3*Math.sin(t*2+p.x*.01)); ctx.fill(); ctx.globalAlpha=1; }
-    requestAnimationFrame(draw);
-  }
-  draw();
-}
 function _maybeStartLoginAnim(id){ if(id==='login-screen') setTimeout(startLoginAnimation,200); }
 
 
 
 // ── Admin Settings ────────────────────────────────────────────
+async function loadSubApprovalPage() {
+  const el = document.getElementById('pg-sub-approval');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+  try {
+    const permits = await api('getActivePermits') || [];
+    const mine = permits.filter(p => p.status==='Pending Acceptor'||p.status==='Pending Safety');
+    if (!mine.length) {
+      el.innerHTML = '<div class="empty-state"><div class="es-icon">📋</div><div class="es-title">No permits pending your approval</div></div>';
+      return;
+    }
+    const rows = mine.map(p => {
+      const role = p.status==='Pending Acceptor' ? 'Acceptor' : 'Safety';
+      return `<div class="card" style="margin-bottom:10px;padding:16px 18px">
+        <div style="font-weight:700;font-size:15px">${esc(p.permitNo)} — ${esc(p.type||'')}</div>
+        <div style="font-size:12px;color:var(--slate);margin:4px 0 10px">${sbadge(p.status)} · ${esc(p.workArea||'')}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-green btn-sm" onclick="doApprove('${p.permitNo}','${role}')">✅ Approve</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="doReject('${p.permitNo}','${role}')">✕ Reject</button>
+        </div></div>`;
+    }).join('');
+    el.innerHTML = `<div class="ph"><div><div class="ph-title">Substitute Approval</div><div class="ph-sub">${mine.length} permit(s) pending</div></div></div>${rows}`;
+  } catch(e) {
+    el.innerHTML = `<div class="card"><div class="alert alert-error">❌ ${e.message}</div></div>`;
+  }
+}
+
 async function loadAdminSettings() {
   // Show panel
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -5737,10 +5523,6 @@ async function saveSettings() {
   } catch(e) { toast(e.message,'err'); }
 }
 
-}
-}
-}
-}
 
 </script>
 
