@@ -3903,6 +3903,28 @@ function buildView(el, p, log, tests, scans, sigs) {
             </div>
           </div>
 
+          <!-- Handover to originator checkbox -->
+          <div style="padding:10px 12px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:var(--radius-sm);margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:600;color:#1e40af">
+              <input type="checkbox" name="sec8_handover_orig" id="sec8_handover_orig" style="width:16px;height:16px;accent-color:#2563eb">
+              Work area handed over to Permit Originator &amp; site cleared
+            </label>
+          </div>
+
+          <!-- 4-Step Signing Sequence -->
+          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Closure Signing Sequence — Complete in Order</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+            ${[{n:1,role:'Job Performer',id:'cls-step-jp',icon:'👷'},{n:2,role:'Originator',id:'cls-step-orig',icon:'📝'},{n:3,role:'Safety In-Charge',id:'cls-step-safety',icon:'🛡️'},{n:4,role:'Permit Acceptor',id:'cls-step-acc',icon:'✅'}].map(s=>`
+            <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;text-align:center">
+              <div style="background:#0f172a;color:#fff;padding:5px;font-size:11px;font-weight:700">Step ${s.n}</div>
+              <div style="padding:10px 6px">
+                <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px">${s.icon} ${s.role}</div>
+                <div id="${s.id}" style="font-size:11px;color:var(--slate);margin-bottom:8px">Pending</div>
+                <button class="btn btn-ghost btn-xs" style="width:100%" onclick="startClosureSign(${s.n})">🖊 Sign</button>
+              </div>
+            </div>`).join('')}
+          </div>
+
           <div style="padding:8px 12px;background:#fffbeb;border-radius:var(--radius-sm);font-size:11px;color:#78350f;margin-bottom:12px">
             📋 All four parties must sign in sequence. White copy → Acceptor Dept · Yellow copy → Safety Dept.
           </div>
