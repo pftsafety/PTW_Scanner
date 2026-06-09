@@ -272,6 +272,39 @@ body::before{
   box-shadow:0 4px 16px rgba(37,99,235,.15);
 }
 .capture-label:active{background:rgba(37,99,235,.25);transform:scale(.98)}
+
+/* ── Scanning animation overlay ─────────────────────────── */
+.scan-anim-overlay {
+  display: none; position: absolute; inset: 0; z-index: 10;
+  background: rgba(10,22,40,.85); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+  border-radius: var(--r);
+}
+.scan-anim-overlay.show { display: flex; }
+.scan-pulse-ring {
+  width: 70px; height: 70px; border-radius: 50%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.scan-pulse-ring::before, .scan-pulse-ring::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--blue-l); animation: scanPulse 1.5s ease-out infinite;
+}
+.scan-pulse-ring::after { animation-delay: .75s; }
+@keyframes scanPulse {
+  0%   { transform: scale(.6); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.scan-anim-icon { font-size: 32px; z-index: 1; }
+.scan-anim-text { font-size: 13px; font-weight: 700; color: var(--blue-ll); letter-spacing: .5px; }
+.scan-anim-sub  { font-size: 11px; color: var(--text-2); }
+
+/* ── Mismatch card ──────────────────────────────────────── */
+.mismatch-card {
+  border-radius: var(--r); padding: 16px; margin-bottom: 14px;
+  background: rgba(220,38,38,.12); border: 1.5px solid rgba(239,68,68,.4);
+  animation: shake .4s ease both;
+}
+
 </style>
 </head>
 <body>
@@ -387,6 +420,11 @@ body::before{
           <div class="qr-corner br"></div>
           <div class="qr-scan-line"></div>
           <div id="qr-reader"></div>
+          <div class="scan-anim-overlay" id="scan-anim-overlay">
+            <div class="scan-pulse-ring"><span class="scan-anim-icon">🪪</span></div>
+            <div class="scan-anim-text">Verifying ID…</div>
+            <div class="scan-anim-sub" id="scan-anim-cert"></div>
+          </div>
         </div>
         <p style="font-size:11px;color:rgba(255,255,255,.45);text-align:center;margin-top:8px">📷 Keep the QR centred in the frame</p>
       </div>
@@ -406,6 +444,7 @@ body::before{
           </div>
         </div>
       </div>
+      <div id="scan-mismatch-card" style="display:none"></div>
       <div id="err3" class="err-box"></div>
     </div>
   </div>
@@ -571,12 +610,34 @@ function renderStep2() {
     </div>
     ${p.jobDescription?`<div style="margin-top:6px"><div class="info-label">Job Description</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:1px;line-height:1.5">${esc(p.jobDescription.slice(0,120))}${p.jobDescription.length>120?'…':''}</div></div>`:''}`;
 
-  // Action chips
-  let actions = [{ id:'Acknowledgement', label:'✍ Acknowledgement' }];
+  // Action chips — driven entirely by permit status
+  let actions = [];
+  const st = p.status || '';
   if (!_isDailyMode) {
-    if (p.status==='Active' && !p.jobStartTime) actions.push({ id:'Start', label:'▶ Work Start' });
-    if (p.status==='Active' && p.jobStartTime && !p.jobStopTime) actions.push({ id:'Stop', label:'⏹ Work Stop' });
-    if (p.status==='Pending Closure') actions.push({ id:'Closure', label:'🔏 Closure' });
+    if (st === 'Pending Worker Acknowledgement') {
+      actions = [{ id:'Acknowledgement', label:'✍ Acknowledgement' }];
+    } else if (st === 'Active' && !p.jobStartTime) {
+      actions = [{ id:'Start', label:'▶ Work Start' }];
+    } else if (st === 'Active' && p.jobStartTime && !p.jobStopTime) {
+      actions = [{ id:'Stop', label:'⏹ Work Stop' }];
+    } else if (st === 'Active' && p.jobStartTime && p.jobStopTime) {
+      actions = [{ id:'Stop', label:'⏹ Work Stop (recorded)' }];
+    } else if (st === 'Pending Closure — Job Performer') {
+      actions = [{ id:'Closure', label:'🔏 Closure Sign' }];
+    } else {
+      // No scanner action available for this status
+      actions = [];
+    }
+  } else {
+    actions = [{ id:'Acknowledgement', label:'✍ Daily Acknowledgement' }];
+  }
+  if (!actions.length) {
+    document.getElementById('action-chips').innerHTML =
+      `<div style="padding:10px 12px;background:rgba(255,255,255,.06);border-radius:10px;font-size:13px;color:var(--text-2);width:100%">
+        No scanner action required for status: <strong style="color:var(--text)">${esc(st)}</strong>
+      </div>`;
+    document.getElementById('worker-list').innerHTML = '';
+    return;
   }
   _action = actions[0].id;
   document.getElementById('action-chips').innerHTML = actions.map(a =>
@@ -708,22 +769,33 @@ async function onScanned(certNo) {
   try { if(finalCert.startsWith('{')){ const j=JSON.parse(finalCert); if(j.id) finalCert=j.id.trim(); } } catch(e){}
   finalCert = finalCert.toLowerCase();
 
-  load(true, 'Looking up '+(finalCert.length>20?finalCert.slice(0,20)+'…':finalCert)+'…');
+  showScanningAnim(finalCert);
   try {
     const rec = await api('getInductionByCert', { certNo: finalCert });
-    load(false);
+    hideScanningAnim();
     if (!rec) throw new Error('Worker not found in induction database');
     _workerRec = rec;
 
     // Verify cert matches expected worker
     const expectedCert = (_targetWorker?.certNo||'').toLowerCase();
-    const certMatch = !expectedCert || rec.certNo?.toLowerCase()===expectedCert;
+    const certMatch = !expectedCert || (rec.certNo||'').toLowerCase()===expectedCert;
+
+    // If cert doesn't match — show error and go back to scan step
+    if (!certMatch) {
+      showErr('err3',
+        '❌ Wrong QR Code\n' +
+        'Scanned: ' + esc(rec.name) + ' (' + esc(rec.certNo||'—') + ')\n' +
+        'Expected: ' + esc(_targetWorker?.name||'') + ' (' + esc(_targetWorker?.certNo||'—') + ')'
+      );
+      showMismatchCard(rec, _targetWorker);
+      if (isStandalone) setTimeout(startCamera, 2500);
+      return;
+    }
 
     document.getElementById('worker-confirm-card').innerHTML = `
       <div class="confirm-name">${esc(rec.name)}</div>
       <div class="confirm-row">🏢 ${esc(rec.contractor||'—')}</div>
       <div class="confirm-row">🪪 ${esc(rec.certNo||'—')}</div>
-      ${!certMatch?`<div style="margin-top:8px;padding:8px 12px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:10px;font-size:11px;color:#fbbf24;font-weight:700">⚠️ QR doesn't match expected worker (${esc(_targetWorker?.name||'')})</div>`:''}
       ${rec.valid
         ? '<span class="valid-badge">✅ Valid Induction · '+esc(rec.expiry)+'</span>'
         : '<span class="expired-badge">❌ Expired · '+esc(rec.expiry)+'</span>'}`;
@@ -734,6 +806,7 @@ async function onScanned(certNo) {
     goStep(4);
     if (navigator.vibrate) navigator.vibrate([10,40,10,40,10]);
   } catch(e) {
+    hideScanningAnim();
     load(false);
     showErr('err3', e.message);
     if (isStandalone) startCamera();
@@ -753,6 +826,9 @@ async function confirmScan() {
       res = await api('ackDailyWorker', { permitNo:_permit.permitNo, entryId:INIT_ENTRY_ID, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor });
     } else if (_action==='Acknowledgement') {
       res = await api('recordWorkerAck', { permitNo:_permit.permitNo, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor });
+    } else if (_action==='Closure') {
+      // Job Performer closure sign — triggers status → Pending Closure — Originator
+      res = await api('jobPerformerSign', { permitNo:_permit.permitNo, action:'closure', certNo:_workerRec.certNo, workerName:_workerRec.name });
     } else {
       res = await api('jobPerformerSign', { permitNo:_permit.permitNo, action:_action.toLowerCase(), certNo:_workerRec.certNo, workerName:_workerRec.name });
     }
@@ -768,7 +844,10 @@ async function confirmScan() {
 
     const sc = document.getElementById('success-card');
     sc.style.display = 'block';
-    document.getElementById('suc-title').textContent = _action + ' Recorded ✓';
+    document.getElementById('suc-title').textContent = 
+      _action==='Closure' ? 'Closure Signed ✓' :
+      _action==='Start'   ? 'Work Started ✓' :
+      _action==='Stop'    ? 'Work Stopped ✓' : 'Acknowledged ✓';
     document.getElementById('suc-sub').textContent = _permit.permitNo + ' · ' + new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 
     const prog = document.getElementById('suc-progress');
@@ -836,6 +915,43 @@ setTimeout(() => {
     document.getElementById('install-banner').style.display = 'flex';
   }
 }, 2000);
+
+
+function showScanningAnim(certText) {
+  const ov = document.getElementById('scan-anim-overlay');
+  const ct = document.getElementById('scan-anim-cert');
+  if (ov) ov.classList.add('show');
+  if (ct) ct.textContent = certText ? 'ID: '+certText.slice(0,20) : 'Checking induction database…';
+}
+function hideScanningAnim() {
+  const ov = document.getElementById('scan-anim-overlay');
+  if (ov) ov.classList.remove('show');
+}
+function showMismatchCard(scanned, expected) {
+  const el = document.getElementById('scan-mismatch-card');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="mismatch-card">
+      <div style="font-size:15px;font-weight:800;color:var(--red-l);margin-bottom:10px">❌ Wrong Worker QR</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="padding:10px;background:rgba(239,68,68,.1);border-radius:10px;border:1px solid rgba(239,68,68,.25)">
+          <div style="font-size:10px;font-weight:700;color:var(--red-l);text-transform:uppercase;margin-bottom:4px">Scanned</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(scanned?.name||'Unknown')}</div>
+          <div style="font-size:11px;color:var(--text-2)">${esc(scanned?.certNo||'—')}</div>
+        </div>
+        <div style="padding:10px;background:rgba(59,130,246,.1);border-radius:10px;border:1px solid rgba(59,130,246,.25)">
+          <div style="font-size:10px;font-weight:700;color:var(--blue-ll);text-transform:uppercase;margin-bottom:4px">Expected</div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${esc(expected?.name||'—')}</div>
+          <div style="font-size:11px;color:var(--text-2)">${esc(expected?.certNo||'—')}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--amber);font-weight:600;margin-top:10px;text-align:center">
+        Please scan the correct worker's QR card
+      </div>
+    </div>`;
+  setTimeout(()=>{ if(el) el.style.display='none'; }, 4000);
+}
 
 // ── Init ───────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
