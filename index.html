@@ -1766,6 +1766,9 @@ function sbadge(s) {
     'Pending Closure — Originator':'badge-closure',
     'Pending Closure — Safety':'badge-closure',
     'Pending Closure — Acceptor':'badge-closure',
+    'Pending Closure — Originator':'badge-closure',
+    'Pending Closure — Safety':'badge-closure',
+    'Pending Closure — Acceptor':'badge-closure',
     'Closed':'badge-closed',
     'Cancelled':'badge-cancelled',
     'Rejected':'badge-cancelled'
@@ -3501,7 +3504,19 @@ function buildView(el, p, log, tests, scans, sigs) {
   if (p.status==='Active' && isSaf && _pendingDailySaf)
     acts+=`<button class="btn btn-green btn-sm" onclick="doApproveDailyEntry('${p.permitNo}','${_pendingDailySaf.entryId}','Safety Officer')">✅ Approve Day ${_pendingDailySaf.dayNo} (Safety)</button>`;
   // ──────────────────────────────────────────────────────────
-  if (p.status==='Pending Closure'&&isOrig)
+  // ── Closure Sequence Signing ─────────────────────────────────
+  // Step 1: Job Performer signs via Scanner (status set by scanner QR)
+  // Step 2: Originator signs
+  if (p.status==='Pending Closure — Originator' && isOrig)
+    acts+=`<button class="btn btn-primary" onclick="doApprove('${p.permitNo}','Closure-Originator')">🖊 Sign Closure (Originator)</button>`;
+  // Step 3: Safety signs
+  if (p.status==='Pending Closure — Safety' && isSaf)
+    acts+=`<button class="btn btn-primary" onclick="doApprove('${p.permitNo}','Closure-Safety')">🖊 Sign Closure (Safety)</button>`;
+  // Step 4: Acceptor signs → permit closed
+  if (p.status==='Pending Closure — Acceptor' && isAcc)
+    acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Closure-Acceptor')">✅ Sign & Close Permit</button>`;
+  // Legacy / Originator-initiated close (Pending Closure status)
+  if (p.status==='Pending Closure' && isOrig)
     acts+=`<button class="btn btn-primary" onclick="doClose('${p.permitNo}')">🔏 Close Permit</button>`;
   // Cancel: Safety or Acceptor can cancel at any time (not Originator)
   const canCancel = (_roles.includes('Safety Officer')||_roles.includes('Acceptor')||_roles.includes('Admin'))
