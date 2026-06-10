@@ -616,12 +616,16 @@ function renderStep2() {
   if (!_isDailyMode) {
     if (st === 'Pending Worker Acknowledgement') {
       actions = [{ id:'Acknowledgement', label:'✍ Acknowledgement' }];
-    } else if (st === 'Active' && !p.jobStartTime) {
-      actions = [{ id:'Start', label:'▶ Work Start' }];
-    } else if (st === 'Active' && p.jobStartTime && !p.jobStopTime) {
-      actions = [{ id:'Stop', label:'⏹ Work Stop' }];
-    } else if (st === 'Active' && p.jobStartTime && p.jobStopTime) {
-      actions = [{ id:'Stop', label:'⏹ Work Stop (recorded)' }];
+    } else if (st === 'Active') {
+      // Show Start if not started, Stop if started but not stopped
+      if (!p.jobStartTime) {
+        actions = [{ id:'Start', label:'▶ Work Start' }];
+      } else if (!p.jobStopTime) {
+        actions = [{ id:'Stop', label:'⏹ Work Stop' }];
+      } else {
+        // Next day — allow new Start
+        actions = [{ id:'Start', label:'▶ New Shift Start' }];
+      }
     } else if (st === 'Pending Closure — Job Performer') {
       actions = [{ id:'Closure', label:'🔏 Closure Sign' }];
     } else {
@@ -686,7 +690,9 @@ function renderWorkerList() {
         <div class="worker-name">${esc(w.name)}</div>
         <div class="worker-meta">${esc(w.company||w.contractor||'—')} · ${esc(w.certNo||'—')}</div>
       </div>
-      ${acked ? '<span class="acked-pill">✓ Acked</span>' : '<span class="pending-pill">Tap to scan ›</span>'}
+      ${acked
+        ? '<span class="acked-pill">✓ Acknowledged</span>'
+        : '<span class="pending-pill" style="font-size:11px;color:var(--blue-l);font-weight:600">Tap to scan ›</span>'}
     </div>`;
   }).join('');
   el._workers = workers;
@@ -800,6 +806,15 @@ async function onScanned(certNo) {
         ? '<span class="valid-badge">✅ Valid Induction · '+esc(rec.expiry)+'</span>'
         : '<span class="expired-badge">❌ Expired · '+esc(rec.expiry)+'</span>'}`;
 
+    // Check if worker already acked
+    const alreadyAcked = (_permit?.extras?.ackedWorkers||[]).includes(_workerRec.certNo) ||
+      (_permit?.extras?.workerAcks||[]).some(a=>a.certNo===_workerRec.certNo);
+    const dupeWarn = document.createElement('div');
+    if (alreadyAcked && _action==='Acknowledgement') {
+      const wc = document.getElementById('worker-confirm-card');
+      const warn = `<div style="margin-top:8px;padding:8px 12px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.4);border-radius:10px;font-size:12px;color:#92400e;font-weight:700">⚠ This worker has already acknowledged this permit</div>`;
+      wc.innerHTML += warn;
+    }
     document.getElementById('exec-ack').style.display = _action==='Start' ? 'block' : 'none';
     document.getElementById('exec-check').checked = false;
     hideErr('err4');
