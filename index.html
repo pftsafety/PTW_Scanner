@@ -1317,6 +1317,40 @@ tbody tr:last-child td { border-bottom:none; }
   </div>
 </div>
 
+
+<!-- ══ ADD SHIFT MODAL ══ -->
+<div id="shift-modal" class="modal-bg">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">➕ Add Work Shift</div>
+      <button class="modal-close" onclick="document.getElementById('shift-modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="shift-permit-no">
+      <div class="fg" style="margin-bottom:12px">
+        <label class="field-label">Shift Date *</label>
+        <input type="date" id="shift-date" class="field">
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="field-label">Shift *</label>
+        <select id="shift-shift" class="field">
+          <option value="">— Select Shift —</option>
+          <option value="First Shift (06:00–14:00)">First Shift (06:00–14:00)</option>
+          <option value="Second Shift (14:00–22:00)">Second Shift (14:00–22:00)</option>
+          <option value="Third Shift (22:00–06:00)">Third Shift (22:00–06:00)</option>
+          <option value="General Shift (09:15–17:15)">General Shift (09:15–17:15)</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:14px">
+        <label class="field-label">Remarks (optional)</label>
+        <input type="text" id="shift-remarks" class="field" placeholder="e.g. Continuation of previous day work">
+      </div>
+      <div class="alert alert-error" id="shift-err" style="display:none;margin-bottom:10px"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveShift()">Save Shift</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SIGNATURE MODAL ══ -->
 <div id="sig-modal" class="modal-bg">
   <div class="modal" style="max-width:540px;width:100%">
@@ -3529,6 +3563,9 @@ function buildView(el, p, log, tests, scans, sigs) {
   // Edit button shown above (strict originator check)
   if (['Active','Pending Safety','Pending Duty Officer','Pending Acceptor'].includes(p.status))
     acts+=`<button class="btn btn-ghost btn-sm" onclick="openGasModal('${p.permitNo}')">🧪 Gas Test</button>`;
+  // Originator can add new work shift on active permit
+  if (p.status==='Active' && isOrig)
+    acts+=`<button class="btn btn-ghost btn-sm" onclick="openAddShiftModal('${p.permitNo}')">➕ Add Shift</button>`;
 
   // Expiry alert
   let expAlert='';
@@ -5009,7 +5046,7 @@ function buildPrintHTML(p, sigs, log, gasTests, workerScans) {
       <div style="font-size:8px;color:#444;margin-bottom:3px">${sub||''}</div>
       ${hasSig
         ? `<div style="border:1px dashed #bbb;border-radius:3px;padding:2px;margin:3px 0;text-align:center">
-             <img src="${s.signatureData||0}" alt="${esc2(s.name||'')} signature"
+             <img src="${s.signatureData}" alt="${esc2(s.name||'')} signature"
                style="display:block;height:42px;width:100%;object-fit:contain;max-width:160px;margin:0 auto">
            </div>`
         : `<div style="height:42px;border-bottom:1px dotted #999;margin:4px 0"></div>`
@@ -5102,7 +5139,6 @@ function buildPrintHTML(p, sigs, log, gasTests, workerScans) {
 </style>
 </head>
 <body>
-<div id="top-progress"></div>
 <div class="page">
 
 <!-- ════════════════════════════════════
@@ -5505,51 +5541,6 @@ ${(ex.dailyEntries&&ex.dailyEntries.length)?`
 </table>
 
 </div>
-
-<!-- ══ ADMIN SETTINGS PANEL ══ -->
-<div id="admin-settings-panel" style="display:none">
-  <div class="ph">
-    <div><div class="ph-title">System Settings</div><div class="ph-sub">Configure permit rules and upload requirements</div></div>
-  </div>
-  <div class="card" style="padding:22px 24px;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px">Permit Limits</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div>
-        <div style="font-size:14px;font-weight:600;color:var(--navy)">Max Active/Pending Permits per Originator</div>
-        <div style="font-size:11px;color:var(--slate);margin-top:2px">Originator cannot create new permits once this limit is reached</div>
-      </div>
-      <input type="number" id="s-max-pending" min="1" max="20" value="5"
-        style="width:70px;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:center;outline:none"
-        onchange="saveSettings()">
-    </div>
-    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px;border-bottom:1px solid var(--border);padding-bottom:8px">File Uploads</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-supp-enabled" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-supp-required" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk Record Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-tbt-enabled" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-tbt-required" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div id="settings-save-note" style="display:none;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:600;color:#166534;margin-top:10px">✅ Settings saved</div>
-  </div>
-  <div class="card" style="padding:16px 24px;background:#fffbeb;border-color:#fde68a">
-    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px">⏱ Daily Permit Expiry Check</div>
-    <div style="font-size:11px;color:#78350f;line-height:1.6">
-      Permits expire after <strong>7 calendar days</strong> from issue date, or earlier based on duration. 
-      Run <code>setupDailyTrigger()</code> once from the Apps Script editor to auto-mark expired permits as <em>Pending Closure</em> every night at 00:05.
-    </div>
-  </div>
-</div>
-
 </body>
 </html>`;
 }
@@ -5637,6 +5628,33 @@ async function loadSubApprovalPage() {
   } catch(e) {
     el.innerHTML = `<div class="card"><div class="alert alert-error">❌ ${e.message}</div></div>`;
   }
+}
+
+function openAddShiftModal(permitNo) {
+  document.getElementById('shift-permit-no').value = permitNo;
+  document.getElementById('shift-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('shift-shift').value = '';
+  document.getElementById('shift-remarks').value = '';
+  document.getElementById('shift-err').style.display = 'none';
+  document.getElementById('shift-modal').classList.add('open');
+}
+async function saveShift() {
+  const no      = document.getElementById('shift-permit-no').value;
+  const date    = document.getElementById('shift-date').value;
+  const shift   = document.getElementById('shift-shift').value;
+  const remarks = document.getElementById('shift-remarks').value.trim();
+  const errEl   = document.getElementById('shift-err');
+  errEl.style.display = 'none';
+  if (!date)  { errEl.textContent='Select a date.';  errEl.style.display='block'; return; }
+  if (!shift) { errEl.textContent='Select a shift.'; errEl.style.display='block'; return; }
+  load(true,'Adding shift…');
+  try {
+    await api('addPermitShift', { permitNo:no, date, shift, remarks });
+    load(false);
+    document.getElementById('shift-modal').classList.remove('open');
+    toast('Shift added ✅','ok');
+    setTimeout(()=>loadView(no), 800);
+  } catch(e) { load(false); errEl.textContent=e.message; errEl.style.display='block'; }
 }
 
 function openProfile() {
