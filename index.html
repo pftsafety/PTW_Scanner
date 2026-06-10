@@ -1320,33 +1320,60 @@ tbody tr:last-child td { border-bottom:none; }
 
 <!-- ══ ADD SHIFT MODAL ══ -->
 <div id="shift-modal" class="modal-bg">
-  <div class="modal-box" style="max-width:420px">
+  <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto">
     <div class="modal-header">
-      <div class="modal-title">➕ Add Work Shift</div>
+      <div>
+        <div class="modal-title">➕ Add Work Shift</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:2px">Workers must re-acknowledge each new shift via QR scanner</div>
+      </div>
       <button class="modal-close" onclick="document.getElementById('shift-modal').classList.remove('open')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="shift-permit-no">
-      <div class="fg" style="margin-bottom:12px">
-        <label class="field-label">Shift Date *</label>
-        <input type="date" id="shift-date" class="field">
+
+      <!-- Shift Details -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="fg">
+          <label class="field-label">Shift Date *</label>
+          <input type="date" id="shift-date" class="field">
+        </div>
+        <div class="fg">
+          <label class="field-label">Shift *</label>
+          <select id="shift-shift" class="field">
+            <option value="">— Select Shift —</option>
+            <option value="First Shift (06:00–14:00)">First Shift (06:00–14:00)</option>
+            <option value="Second Shift (14:00–22:00)">Second Shift (14:00–22:00)</option>
+            <option value="Third Shift (22:00–06:00)">Third Shift (22:00–06:00)</option>
+            <option value="General Shift (09:15–17:15)">General Shift (09:15–17:15)</option>
+          </select>
+        </div>
       </div>
       <div class="fg" style="margin-bottom:12px">
-        <label class="field-label">Shift *</label>
-        <select id="shift-shift" class="field">
-          <option value="">— Select Shift —</option>
-          <option value="First Shift (06:00–14:00)">First Shift (06:00–14:00)</option>
-          <option value="Second Shift (14:00–22:00)">Second Shift (14:00–22:00)</option>
-          <option value="Third Shift (22:00–06:00)">Third Shift (22:00–06:00)</option>
-          <option value="General Shift (09:15–17:15)">General Shift (09:15–17:15)</option>
-        </select>
-      </div>
-      <div class="fg" style="margin-bottom:14px">
         <label class="field-label">Remarks (optional)</label>
-        <input type="text" id="shift-remarks" class="field" placeholder="e.g. Continuation of previous day work">
+        <input type="text" id="shift-remarks" class="field" placeholder="e.g. Continuation — additional scaffolding work">
       </div>
+
+      <!-- Worker List -->
+      <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">
+        Workers for this Shift
+      </div>
+      <div id="shift-worker-list" style="border:1px solid var(--border);border-radius:var(--radius-sm);min-height:48px;margin-bottom:8px;padding:4px">
+        <div style="padding:12px;text-align:center;font-size:12px;color:var(--slate)" id="shift-no-workers">No workers added yet</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <div class="search-input" style="flex:1">
+          <input type="text" id="shift-worker-search" placeholder="Search induction database…" oninput="searchShiftWorkers(this.value)">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="searchShiftWorkers(document.getElementById('shift-worker-search').value)">Search</button>
+      </div>
+      <div id="shift-worker-results" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);display:none;margin-bottom:12px"></div>
+
+      <div class="alert alert-info" style="font-size:12px;padding:8px 12px;margin-bottom:12px;background:#eff6ff;border-color:#bfdbfe;color:#1e40af">
+        ℹ After saving, workers must acknowledge this shift via the QR Scanner before work begins.
+      </div>
+
       <div class="alert alert-error" id="shift-err" style="display:none;margin-bottom:10px"></div>
-      <button class="btn btn-primary" style="width:100%" onclick="saveShift()">Save Shift</button>
+      <button class="btn btn-primary" style="width:100%" onclick="saveShift()">💾 Save Shift & Notify Workers</button>
     </div>
   </div>
 </div>
@@ -5630,29 +5657,87 @@ async function loadSubApprovalPage() {
   }
 }
 
+let _shiftWorkers = [];
+
 function openAddShiftModal(permitNo) {
+  _shiftWorkers = [];
   document.getElementById('shift-permit-no').value = permitNo;
   document.getElementById('shift-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('shift-shift').value = '';
   document.getElementById('shift-remarks').value = '';
   document.getElementById('shift-err').style.display = 'none';
+  document.getElementById('shift-worker-search').value = '';
+  document.getElementById('shift-worker-results').style.display = 'none';
+  document.getElementById('shift-worker-results').innerHTML = '';
+  renderShiftWorkers();
   document.getElementById('shift-modal').classList.add('open');
 }
+
+function renderShiftWorkers() {
+  const el = document.getElementById('shift-worker-list');
+  const noEl = document.getElementById('shift-no-workers');
+  if (!_shiftWorkers.length) {
+    el.innerHTML = '<div style="padding:12px;text-align:center;font-size:12px;color:var(--slate)">No workers added yet</div>';
+    return;
+  }
+  el.innerHTML = _shiftWorkers.map((w,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--bg)">
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--blue-dark);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${(w.name||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--navy)">${esc(w.name)}</div>
+        <div style="font-size:11px;color:var(--slate)">${esc(w.company||w.contractor||'—')} · ${esc(w.certNo||'—')}</div>
+      </div>
+      <button onclick="_shiftWorkers.splice(${i},1);renderShiftWorkers()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 6px">✕</button>
+    </div>`).join('');
+}
+
+async function searchShiftWorkers(q) {
+  if (!q||q.length<2) return;
+  const el = document.getElementById('shift-worker-results');
+  el.style.display='block';
+  el.innerHTML='<div style="padding:10px;text-align:center"><div class="spinner" style="margin:0 auto;width:20px;height:20px;border-width:3px"></div></div>';
+  try {
+    const raw = await api('searchInduction',{search:q});
+    const recs = Array.isArray(raw)?raw:(raw?.results||[]);
+    if (!recs.length) { el.innerHTML='<div style="padding:10px;text-align:center;font-size:12px;color:var(--slate)">No records found</div>'; return; }
+    el.innerHTML = recs.slice(0,10).map(r=>`
+      <div onclick="addShiftWorker(${JSON.stringify(r).replace(/"/g,'&quot;')})"
+        style="padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bg);transition:background .1s"
+        onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${esc(r.name)}</div>
+          <div style="font-size:11px;color:var(--slate)">${esc(r.contractor||'—')} · ${esc(r.certNo||'—')}</div>
+        </div>
+        <span style="font-size:10px;padding:2px 8px;border-radius:99px;${r.valid?'background:#dcfce7;color:#166534':'background:#fee2e2;color:#991b1b'}">${r.valid?'Valid':'Expired'}</span>
+      </div>`).join('');
+  } catch(e) { el.innerHTML='<div style="padding:10px;text-align:center;font-size:12px;color:var(--red)">'+e.message+'</div>'; }
+}
+
+function addShiftWorker(r) {
+  if (typeof r==='string') r=JSON.parse(r);
+  if (_shiftWorkers.find(w=>w.certNo===r.certNo)) { toast('Worker already added','warn'); return; }
+  _shiftWorkers.push({name:r.name, company:r.contractor||'', certNo:r.certNo, valid:r.valid});
+  renderShiftWorkers();
+  document.getElementById('shift-worker-search').value='';
+  document.getElementById('shift-worker-results').style.display='none';
+}
+
 async function saveShift() {
   const no      = document.getElementById('shift-permit-no').value;
   const date    = document.getElementById('shift-date').value;
   const shift   = document.getElementById('shift-shift').value;
   const remarks = document.getElementById('shift-remarks').value.trim();
   const errEl   = document.getElementById('shift-err');
-  errEl.style.display = 'none';
+  errEl.style.display='none';
   if (!date)  { errEl.textContent='Select a date.';  errEl.style.display='block'; return; }
   if (!shift) { errEl.textContent='Select a shift.'; errEl.style.display='block'; return; }
+  if (!_shiftWorkers.length) { errEl.textContent='Add at least one worker for this shift.'; errEl.style.display='block'; return; }
   load(true,'Adding shift…');
   try {
-    await api('addPermitShift', { permitNo:no, date, shift, remarks });
+    await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers });
     load(false);
     document.getElementById('shift-modal').classList.remove('open');
-    toast('Shift added ✅','ok');
+    toast('Shift added — workers must acknowledge via QR Scanner ✅','ok');
     setTimeout(()=>loadView(no), 800);
   } catch(e) { load(false); errEl.textContent=e.message; errEl.style.display='block'; }
 }
