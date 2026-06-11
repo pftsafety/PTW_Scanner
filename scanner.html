@@ -667,9 +667,22 @@ function renderWorkerList() {
     const entry = (ex.dailyEntries||[]).find(e => e.entryId === INIT_ENTRY_ID);
     workers = entry ? entry.workers : [];
   } else {
-    workers = (ex.workEntries||[]).flatMap(e => e.workers||[]);
-    if (!workers.length) workers = ex.workers||[];
-    // If still empty — extras may not be loaded in list view, refetch full permit
+    // Check if action is for an additional shift
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayShift = (ex.additionalShifts||[]).find(s =>
+      s.date === todayStr && (s.ackedCount||0) < (s.totalWorkers||0)
+    ) || (ex.additionalShifts||[]).slice(-1)[0]; // fallback: latest shift
+
+    if (_action === 'Acknowledgement' && todayShift?.workers?.length) {
+      // Use workers from the latest/today's shift for ack
+      workers = todayShift.workers.map(w => ({
+        ...w, shiftId: todayShift.shiftId
+      }));
+    } else {
+      workers = (ex.workEntries||[]).flatMap(e => e.workers||[]);
+      if (!workers.length) workers = ex.workers||[];
+    }
+    // If still empty — refetch full permit
     if (!workers.length && _permit.permitNo && !_permit._fullLoaded) {
       load(true,'Loading workers…');
       api('getPermitByNo', {permitNo: _permit.permitNo}).then(full => {
@@ -840,7 +853,8 @@ async function confirmScan() {
     if (_isDailyMode) {
       res = await api('ackDailyWorker', { permitNo:_permit.permitNo, entryId:INIT_ENTRY_ID, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor });
     } else if (_action==='Acknowledgement') {
-      res = await api('recordWorkerAck', { permitNo:_permit.permitNo, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor });
+      const shiftId = _targetWorker?.shiftId || null;
+      res = await api('recordWorkerAck', { permitNo:_permit.permitNo, certNo:_workerRec.certNo, workerName:_workerRec.name, contractor:_workerRec.contractor, shiftId });
     } else if (_action==='Closure') {
       // Job Performer closure sign — triggers status → Pending Closure — Originator
       res = await api('jobPerformerSign', { permitNo:_permit.permitNo, action:'closure', certNo:_workerRec.certNo, workerName:_workerRec.name });
