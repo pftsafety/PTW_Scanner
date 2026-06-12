@@ -3920,16 +3920,46 @@ function buildView(el, p, log, tests, scans, sigs) {
                 <div style="font-size:11px;color:var(--slate);margin-bottom:8px">
                   <strong>Shifts:</strong> ${(de.shiftLabels||de.shifts||[]).join(' · ')||'—'}
                 </div>
-                <!-- Worker pills with ack status -->
-                <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
-                  ${(de.workers||[]).map(w=>`
-                  <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;background:${w.acked?'#f0fdf4':'#f8fafc'};border:1px solid ${w.acked?'#86efac':'#e2e8f0'};font-size:11px">
-                    <span style="width:7px;height:7px;border-radius:50%;background:${w.acked?'#10b981':'#94a3b8'}"></span>
-                    <span style="font-weight:600;color:var(--navy)">${esc(w.name||'?')}</span>
-                    <span style="color:var(--slate)">${esc(w.certNo||'—')}</span>
-                    ${w.acked?`<span style="color:#10b981;font-weight:700;font-size:10px">✓ Acked</span>`:''}
-                  </span>`).join('')}
+                <!-- Workers — shift-wise table -->
+                <div style="margin-bottom:10px;overflow-x:auto">
+                  <table style="width:100%;border-collapse:collapse;font-size:11px">
+                    <thead><tr style="background:#f8fafc">
+                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">#</th>
+                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Worker Name</th>
+                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Cert No.</th>
+                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Company</th>
+                      <th style="padding:5px 8px;text-align:center;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Ack</th>
+                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Ack Time</th>
+                    </tr></thead>
+                    <tbody>
+                      ${(de.workers||[]).map((w,wi)=>`<tr style="background:${wi%2?'#fafafa':'#fff'}">
+                        <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center">${wi+1}</td>
+                        <td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600;color:var(--navy)">${esc(w.name||'—')}</td>
+                        <td style="padding:4px 8px;border:1px solid #e2e8f0;font-family:monospace;font-size:10px">${esc(w.certNo||'—')}</td>
+                        <td style="padding:4px 8px;border:1px solid #e2e8f0;color:var(--slate)">${esc(w.company||w.contractor||'—')}</td>
+                        <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center">${w.acked?'<span style="color:#10b981;font-weight:700">✓</span>':'<span style="color:#94a3b8">—</span>'}</td>
+                        <td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:10px;color:var(--slate)">${w.ackedAt?fd(w.ackedAt):'—'}</td>
+                      </tr>`).join('')||'<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--slate)">No workers</td></tr>'}
+                    </tbody>
+                  </table>
                 </div>
+                <!-- Additional shifts for this day -->
+                ${(ex.additionalShifts||[]).filter(s=>s.date===de.date).map(sh=>`
+                  <div style="margin-top:8px;border:1px solid #bfdbfe;border-radius:6px;overflow:hidden">
+                    <div style="background:#eff6ff;padding:5px 10px;font-size:11px;font-weight:700;color:#1e40af">
+                      ➕ ${esc(sh.shift)} — ${esc(sh.date)} &nbsp;·&nbsp; ${sh.ackedCount||0}/${sh.totalWorkers||0} workers acked
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;font-size:11px">
+                      <tbody>
+                        ${(sh.workers||[]).map((w,wi)=>`<tr style="background:${wi%2?'#fafafa':'#fff'}">
+                          <td style="padding:3px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;color:var(--navy)">${esc(w.name||'—')}</td>
+                          <td style="padding:3px 8px;border-bottom:1px solid #e2e8f0;font-family:monospace;font-size:10px">${esc(w.certNo||'—')}</td>
+                          <td style="padding:3px 8px;border-bottom:1px solid #e2e8f0;text-align:center">${w.acked?'<span style="color:#10b981;font-weight:700">✓ Acked</span>':'<span style="color:#f59e0b">Pending</span>'}</td>
+                        </tr>`).join('')}
+                      </tbody>
+                    </table>
+                  </div>`).join('')}
+                
                 <!-- Ack progress bar (only when pending ack) -->
                 ${de.status==='Pending Worker Acknowledgement'?`
                 <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -3958,13 +3988,16 @@ function buildView(el, p, log, tests, scans, sigs) {
                 ${(de.tbt&&Object.keys(de.tbt).some(k=>k!=='notes'&&de.tbt[k]))?`
                 <div style="margin-top:10px;border-top:1px solid #f1f5f9;padding-top:10px">
                   <div style="font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">📋 Tool Box Talk</div>
-                  <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px">
+                  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
                     ${TBT.map(item=>{
                       const val = de.tbt[item.k];
-                      if (!val) return '';
-                      const col = val==='Yes'?'#14532d':val==='No'?'#991b1b':'#475569';
-                      const bg  = val==='Yes'?'#dcfce7':val==='No'?'#fee2e2':'#f1f5f9';
-                      return `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${bg};color:${col};border:1px solid ${col}33">
+                      const col = val==='Yes'?'#14532d':val==='No'?'#991b1b':'#64748b';
+                      const bg  = val==='Yes'?'#dcfce7':val==='No'?'#fee2e2':'#f8fafc';
+                      const bdr = val==='Yes'?'#86efac':val==='No'?'#fca5a5':'#e2e8f0';
+                      return `<div style="padding:5px 7px;border-radius:6px;background:${bg};border:1px solid ${bdr};font-size:10px">
+                        <div style="color:#64748b;font-size:9px;line-height:1.2;margin-bottom:2px">${esc(item.label||item.k)}</div>
+                        <div style="font-weight:700;color:${col}">${esc(val||'—')}</div>
+                      </div>`; return `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${bg};color:${col};border:1px solid ${col}33">
                         ${esc(item.l)}: <strong>${val}</strong>
                       </span>`;
                     }).join('')}
