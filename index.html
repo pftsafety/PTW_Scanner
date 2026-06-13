@@ -3804,6 +3804,46 @@ function buildView(el, p, log, tests, scans, sigs) {
         </div>`}
 
         <!-- Per-worker signing table -->
+
+        <!-- ── Additional Shifts ────────────────────────────────── -->
+        ${(ex.additionalShifts||[]).length ? `
+        <div style="margin-top:14px;border-top:2px solid #e0f2fe;padding-top:12px">
+          <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+            📅 Additional Shifts
+          </div>
+          ${(ex.additionalShifts||[]).map((sh,si)=>`
+          <div style="border:1px solid #bae6fd;border-radius:8px;overflow:hidden;margin-bottom:10px">
+            <div style="background:#e0f2fe;padding:7px 12px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;font-weight:700;color:#0369a1">
+                ${esc(sh.date)} &nbsp;·&nbsp; ${esc(sh.shift)}
+              </div>
+              <span style="font-size:11px;padding:2px 10px;border-radius:99px;background:${(sh.ackedCount||0)>=(sh.totalWorkers||1)?'#dcfce7':'#fef3c7'};color:${(sh.ackedCount||0)>=(sh.totalWorkers||1)?'#14532d':'#92400e'};font-weight:700">
+                ${sh.ackedCount||0} / ${sh.totalWorkers||0} acked
+              </span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:11px">
+              <thead><tr style="background:#f0f9ff">
+                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">#</th>
+                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Worker Name</th>
+                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Cert No.</th>
+                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Company</th>
+                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:center">Ack</th>
+                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Ack Time</th>
+              </tr></thead>
+              <tbody>
+                ${(sh.workers||[]).map((w,wi)=>`<tr style="background:${w.acked?'#f0fdf4':wi%2?'#fafafa':'#fff'}">
+                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center;color:var(--slate)">${wi+1}</td>
+                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-weight:600">${esc(w.name||'—')}</td>
+                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-size:10px">${esc(w.certNo||'—')}</td>
+                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;color:var(--slate)">${esc(w.company||w.contractor||'—')}</td>
+                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center">${w.acked?'<span style="color:#10b981;font-weight:800">✓</span>':'<span style="color:#f59e0b;font-size:10px">Pending</span>'}</td>
+                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-size:10px;color:var(--slate)">${w.ackedAt?fd(w.ackedAt):'—'}</td>
+                </tr>`).join('') || '<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--slate)">No workers</td></tr>'}
+              </tbody>
+            </table>
+          </div>`).join('')}
+        </div>` : ''}
+
         <div style="overflow-x:auto">
           <table class="worker-table">
             <thead>
