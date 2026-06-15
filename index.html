@@ -3805,8 +3805,10 @@ function buildView(el, p, log, tests, scans, sigs) {
 
         <!-- Per-worker signing table -->
 
-        <!-- ── Additional Shifts ────────────────────────────────── -->
-        ${(ex.additionalShifts||[]).length ? `
+        <!-- ── Shifts Approval Timeline ──────────────────────────── -->
+        ${(ex.shifts||[]).length > 0 ? renderShiftsTimeline(ex.shifts, ex) : ''}
+
+        ${(ex.shifts||[]).length === 0 && (ex.additionalShifts||[]).length ? `
         <div style="margin-top:14px;border-top:2px solid #e0f2fe;padding-top:12px">
           <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
             📅 Additional Shifts
@@ -5701,6 +5703,76 @@ async function initiateClosure() {
     if(errEl){ errEl.textContent='❌ '+e.message; errEl.style.display='block'; }
     else toast(e.message,'err');
   }
+}
+
+function renderShiftsTimeline(shifts, ex) {
+  if (!shifts||!shifts.length) return '';
+  const stepIcon  = ['✍','🏭','🛡️','👔','▶','⏹'];
+  const stepLabel = ['Worker Ack','Acceptor','Safety','Duty Ofcr','Work Start','Work Stop'];
+
+  const shiftRows = shifts.map(function(sh, si) {
+    const done   = sh.shiftStatus==='Completed';
+    const active = sh.shiftStatus==='Active';
+    const hBg    = done?'#dcfce7':active?'#dbeafe':'#fef3c7';
+    const hCl    = done?'#14532d':active?'#1d4ed8':'#92400e';
+
+    const workerAcked = (sh.workerAckCount||0) >= (sh.workerAckTotal||0) && (sh.workerAckTotal||0) > 0;
+    const steps = [
+      {icon:'✍', label:'Worker Ack', done:workerAcked, detail:(sh.workerAckCount||0)+'/'+(sh.workerAckTotal||0)+' acked', time:''},
+      {icon:'🏭', label:'Acceptor',   done:!!sh.acceptorSignTime,   detail:esc(sh.acceptorName||'—'),  time:sh.acceptorSignTime||''},
+      {icon:'🛡️', label:'Safety',    done:!!sh.safetySignTime,     detail:esc(sh.safetyName||'—'),    time:sh.safetySignTime||''},
+      {icon:'👔', label:'Duty Ofcr', done:!!sh.dutyOfficerSignTime, detail:sh.dutyOfficerSignTime?esc(sh.dutyOfficerName||'—'):'—', time:sh.dutyOfficerSignTime||''},
+      {icon:'▶',  label:'Start',     done:!!sh.jobStartTime,  detail:sh.jobStartTime?fd(sh.jobStartTime):'',  time:''},
+      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?fd(sh.jobStopTime):'',    time:''},
+    ];
+    const stepHtml = steps.map(function(s) {
+      return '<div style="text-align:center;padding:6px 4px;border-radius:8px;background:'+(s.done?'#f0fdf4':'#f8fafc')+';border:1px solid '+(s.done?'#86efac':'#e2e8f0')+'">'
+        +'<div style="font-size:14px'+(s.done?'':';filter:grayscale(1);opacity:.4')+'">'+s.icon+'</div>'
+        +'<div style="font-size:9px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase">'+s.label+'</div>'
+        +'<div style="font-size:9px;color:'+(s.done?'#14532d':'#94a3b8')+';margin-top:1px;font-weight:'+(s.done?700:400)+'">'+s.detail+'</div>'
+        +(s.time?'<div style="font-size:8px;color:#94a3b8;margin-top:1px">'+fd(s.time)+'</div>':'')
+        +'</div>';
+    }).join('');
+
+    const workerRows = (sh.workers||[]).map(function(w,wi) {
+      return '<tr style="background:'+(w.acked?'#f0fdf4':wi%2?'#fafafa':'#fff')+'">'
+        +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center;color:#94a3b8">'+(wi+1)+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600">'+esc(w.name||'—')+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-family:monospace;font-size:10px">'+esc(w.certNo||'—')+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">'+esc(w.company||w.contractor||'—')+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center">'+(w.acked?'<span style="color:#10b981;font-weight:800">✓</span>':'<span style="color:#f59e0b">—</span>')+'</td>'
+        +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:10px;color:#64748b">'+(w.ackedAt?fd(w.ackedAt):'—')+'</td>'
+        +'</tr>';
+    }).join('') || '<tr><td colspan="6" style="padding:8px;text-align:center;color:#94a3b8">No workers</td></tr>';
+
+    return '<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
+      +'<div style="background:'+hBg+';padding:8px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+        +'<div><span style="font-size:13px;font-weight:800;color:'+hCl+'">Shift '+(sh.shiftNo||si+1)+'</span>'
+        +'<span style="font-size:11px;color:#64748b;margin-left:8px">'+esc(sh.date||'')+' '+esc(sh.shift||'')+'</span></div>'
+        +'<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.08);color:'+hCl+'">'+esc(sh.shiftStatus||'Pending')+'</span>'
+      +'</div>'
+      +'<div style="padding:12px 14px">'
+        +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:12px">'+stepHtml+'</div>'
+        +'<div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase">Workers ('+(sh.workers||[]).length+')</div>'
+        +'<table style="width:100%;border-collapse:collapse;font-size:11px">'
+          +'<thead><tr style="background:#f8fafc">'
+            +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">#</th>'
+            +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b;text-align:left">Name</th>'
+            +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b;text-align:left">Cert No.</th>'
+            +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b;text-align:left">Company</th>'
+            +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">Ack</th>'
+            +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b;text-align:left">Ack Time</th>'
+          +'</tr></thead>'
+          +'<tbody>'+workerRows+'</tbody>'
+        +'</table>'
+      +'</div>'
+    +'</div>';
+  });
+
+  return '<div style="margin-top:16px;border-top:2px solid #e2e8f0;padding-top:14px">'
+    +'<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📋 Shift-wise Approval & Activity Record</div>'
+    +shiftRows.join('')
+    +'</div>';
 }
 
 async function loadSubApprovalPage() {
