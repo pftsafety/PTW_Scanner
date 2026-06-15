@@ -593,6 +593,7 @@ function renderStep2() {
 
   // Permit info
   const fmtDate = d => { try{return d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';}catch(e){return d||'—';} };
+  const currentShift = (ex.shifts||[]).find(s=>s.shiftId===ex.currentShiftId) || (ex.shifts||[]).slice(-1)[0] || null;
   document.getElementById('permit-info').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
       <div>
@@ -608,6 +609,11 @@ function renderStep2() {
       <div><div class="info-label">Permit Acceptor</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:1px">✅ ${esc(p.acceptorName||'—')}</div></div>
       <div><div class="info-label">Valid Until</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:1px">📅 ${fmtDate(p.validTo)}</div></div>
     </div>
+    ${currentShift ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);border-radius:10px">
+      <div class="info-label">Current Shift</div>
+      <div style="font-size:13px;font-weight:700;color:var(--blue-ll)">Shift ${currentShift.shiftNo||'1'} · ${esc(currentShift.date||'')} ${esc(currentShift.shift||'')}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">${(currentShift.workerAckCount||0)}/${(currentShift.workerAckTotal||0)} workers acked · ${esc(currentShift.shiftStatus||'')}</div>
+    </div>` : ''}
     ${p.jobDescription?`<div style="margin-top:6px"><div class="info-label">Job Description</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:1px;line-height:1.5">${esc(p.jobDescription.slice(0,120))}${p.jobDescription.length>120?'…':''}</div></div>`:''}`;
 
   // Action chips — driven entirely by permit status
@@ -617,14 +623,20 @@ function renderStep2() {
     if (st === 'Pending Worker Acknowledgement') {
       actions = [{ id:'Acknowledgement', label:'✍ Acknowledgement' }];
     } else if (st === 'Active') {
-      // Show Start if not started, Stop if started but not stopped
-      if (!p.jobStartTime) {
+      // Use shifts[] to determine current action
+      const activeShift = (ex.shifts||[]).find(s=>s.shiftStatus==='Active');
+      if (activeShift) {
+        if (!activeShift.jobStartTime) {
+          actions = [{ id:'Start', label:'▶ Work Start — Shift '+( activeShift.shiftNo||'') }];
+        } else if (!activeShift.jobStopTime) {
+          actions = [{ id:'Stop', label:'⏹ Work Stop — Shift '+(activeShift.shiftNo||'') }];
+        } else {
+          actions = [];  // Shift complete, waiting for next shift
+        }
+      } else if (!p.jobStartTime) {
         actions = [{ id:'Start', label:'▶ Work Start' }];
       } else if (!p.jobStopTime) {
         actions = [{ id:'Stop', label:'⏹ Work Stop' }];
-      } else {
-        // Next day — allow new Start
-        actions = [{ id:'Start', label:'▶ New Shift Start' }];
       }
     } else if (st === 'Pending Closure — Job Performer') {
       actions = [{ id:'Closure', label:'🔏 Closure Sign' }];
