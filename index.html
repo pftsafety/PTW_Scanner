@@ -5646,6 +5646,50 @@ ${(ex.dailyEntries&&ex.dailyEntries.length)?`
 </table>
 
 </div>
+<!-- ══ ADMIN SETTINGS PANEL ══ -->
+<div id="admin-settings-panel" style="display:none">
+  <div class="ph">
+    <div><div class="ph-title">System Settings</div><div class="ph-sub">Configure permit rules and upload requirements</div></div>
+  </div>
+  <div class="card" style="padding:22px 24px;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px">Permit Limits</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--navy)">Max Active/Pending Permits per Originator</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:2px">Originator cannot create new permits once this limit is reached</div>
+      </div>
+      <input type="number" id="s-max-pending" min="1" max="20" value="5"
+        style="width:70px;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:center;outline:none"
+        onchange="saveSettings()">
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px;border-bottom:1px solid var(--border);padding-bottom:8px">File Uploads</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-supp-enabled" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-supp-required" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk Record Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-tbt-enabled" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-tbt-required" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div id="settings-save-note" style="display:none;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:600;color:#166534;margin-top:10px">✅ Settings saved</div>
+  </div>
+  <div class="card" style="padding:16px 24px;background:#fffbeb;border-color:#fde68a">
+    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px">⏱ Daily Permit Expiry Check</div>
+    <div style="font-size:11px;color:#78350f;line-height:1.6">
+      Permits expire at <strong>22:00 on the last valid day</strong> (issue date + duration, max 7 days).
+      Run <code>setupDailyTrigger()</code> once from the Apps Script editor to auto-mark expired permits as <em>Pending Closure</em> every night at 00:05.
+    </div>
+  </div>
+</div>
+
 </body>
 </html>`;
 }
