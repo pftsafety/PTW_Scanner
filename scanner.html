@@ -679,17 +679,18 @@ function renderWorkerList() {
     const entry = (ex.dailyEntries||[]).find(e => e.entryId === INIT_ENTRY_ID);
     workers = entry ? entry.workers : [];
   } else {
-    // Check if action is for an additional shift
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayShift = (ex.additionalShifts||[]).find(s =>
-      s.date === todayStr && (s.ackedCount||0) < (s.totalWorkers||0)
-    ) || (ex.additionalShifts||[]).slice(-1)[0]; // fallback: latest shift
+    // Resolve the shift that currently needs worker acknowledgement.
+    // Priority: ex.currentShiftId -> first shift Pending Worker Acknowledgement -> latest shift.
+    let targetShift = null;
+    if (ex.shifts && ex.shifts.length) {
+      targetShift = ex.shifts.find(s => s.shiftId === ex.currentShiftId)
+                 || ex.shifts.find(s => s.shiftStatus === 'Pending Worker Acknowledgement')
+                 || ex.shifts[ex.shifts.length - 1];
+    }
 
-    if (_action === 'Acknowledgement' && todayShift?.workers?.length) {
-      // Use workers from the latest/today's shift for ack
-      workers = todayShift.workers.map(w => ({
-        ...w, shiftId: todayShift.shiftId
-      }));
+    if (_action === 'Acknowledgement' && targetShift && targetShift.workers && targetShift.workers.length) {
+      // Tag each worker with the shiftId so the ack is recorded against THIS shift
+      workers = targetShift.workers.map(w => ({ ...w, shiftId: targetShift.shiftId }));
     } else {
       workers = (ex.workEntries||[]).flatMap(e => e.workers||[]);
       if (!workers.length) workers = ex.workers||[];
