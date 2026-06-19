@@ -1368,6 +1368,19 @@ tbody tr:last-child td { border-bottom:none; }
       </div>
       <div id="shift-worker-results" style="max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);display:none;margin-bottom:12px"></div>
 
+      <!-- Tool Box Talk — required before a new shift can be added -->
+      <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px">
+        📋 Tool Box Talk (required)
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="field-label">TBT Topic *</label>
+        <input type="text" id="shift-tbt-topic" class="field" placeholder="e.g. Hazards of working at height, PPE checks">
+      </div>
+      <div class="fg" style="margin-bottom:12px">
+        <label class="field-label">Conducted By *</label>
+        <input type="text" id="shift-tbt-by" class="field" placeholder="Name of person conducting the talk">
+      </div>
+
       <div class="alert alert-info" style="font-size:12px;padding:8px 12px;margin-bottom:12px;background:#eff6ff;border-color:#bfdbfe;color:#1e40af">
         ℹ After saving, workers must acknowledge this shift via the QR Scanner before work begins.
       </div>
@@ -1687,6 +1700,8 @@ async function doChangePw() {
 }
 
 function logout() {
+  const lm = document.getElementById('logout-modal');
+  if (lm) lm.classList.remove('open');
   storageRemove('ptw_s'); TOKEN=null; CU=null;  // Keep ptw_last_email so email is pre-filled
   document.getElementById('app').style.display='none';
   document.getElementById('l-pw').value='';
@@ -3809,7 +3824,7 @@ function buildView(el, p, log, tests, scans, sigs) {
         <!-- Per-worker signing table -->
 
         <!-- ── Shifts Approval Timeline ──────────────────────────── -->
-        ${(ex.shifts||[]).length > 0 ? renderShiftsTimeline(ex.shifts, ex) : ''}
+        ${(ex.shifts||[]).length > 0 ? renderShiftsTimeline(ex.shifts, ex, sigs) : ''}
 
         ${(ex.shifts||[]).length === 0 && (ex.additionalShifts||[]).length ? `
         <div style="margin-top:14px;border-top:2px solid #e0f2fe;padding-top:12px">
@@ -5764,10 +5779,23 @@ function fmtShiftDate(dateStr, fallbackNo) {
   } catch(e) { return 'Shift ' + fallbackNo; }
 }
 
-function renderShiftsTimeline(shifts, ex) {
+function findShiftSig(sigs, role, signTime) {
+  if (!signTime || !sigs || !sigs.length) return null;
+  const target = new Date(signTime).getTime();
+  if (isNaN(target)) return null;
+  let best = null, bestDiff = Infinity;
+  sigs.forEach(function(s) {
+    if (!s.role || !s.time) return;
+    if (s.role.toLowerCase().indexOf(role.toLowerCase()) === -1) return;
+    const diff = Math.abs(new Date(s.time).getTime() - target);
+    if (diff < bestDiff && diff < 15000) { bestDiff = diff; best = s; }
+  });
+  return (best && best.hasSignature) ? best : null;
+}
+
+function renderShiftsTimeline(shifts, ex, sigs) {
   if (!shifts||!shifts.length) return '';
-  const stepIcon  = ['✍','🏭','🛡️','👔','▶','⏹'];
-  const stepLabel = ['Worker Ack','Acceptor','Safety','Duty Ofcr','Work Start','Work Stop'];
+  sigs = sigs || [];
 
   const shiftRows = shifts.map(function(sh, si) {
     const done   = sh.shiftStatus==='Completed';
@@ -5775,18 +5803,25 @@ function renderShiftsTimeline(shifts, ex) {
     const hBg    = done?'#dcfce7':active?'#dbeafe':'#fef3c7';
     const hCl    = done?'#14532d':active?'#1d4ed8':'#92400e';
 
+    const acceptorSig = findShiftSig(sigs, 'Acceptor', sh.acceptorSignTime);
+    const safetySig    = findShiftSig(sigs, 'Safety',   sh.safetySignTime);
+    const dutySig       = findShiftSig(sigs, 'Duty',     sh.dutyOfficerSignTime);
+
     const workerAcked = (sh.workerAckCount||0) >= (sh.workerAckTotal||0) && (sh.workerAckTotal||0) > 0;
     const steps = [
-      {icon:'✍', label:'Worker Ack', done:workerAcked, detail:(sh.workerAckCount||0)+'/'+(sh.workerAckTotal||0)+' acked', time:''},
-      {icon:'🏭', label:'Acceptor',   done:!!sh.acceptorSignTime,   detail:esc(sh.acceptorName||'—'),  time:sh.acceptorSignTime||''},
-      {icon:'🛡️', label:'Safety',    done:!!sh.safetySignTime,     detail:esc(sh.safetyName||'—'),    time:sh.safetySignTime||''},
-      {icon:'👔', label:'Duty Ofcr', done:!!sh.dutyOfficerSignTime, detail:sh.dutyOfficerSignTime?esc(sh.dutyOfficerName||'—'):'—', time:sh.dutyOfficerSignTime||''},
-      {icon:'▶',  label:'Start',     done:!!sh.jobStartTime,  detail:sh.jobStartTime?fd(sh.jobStartTime):'',  time:''},
-      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?fd(sh.jobStopTime):'',    time:''},
+      {icon:'✍', label:'Worker Ack', done:workerAcked, detail:(sh.workerAckCount||0)+'/'+(sh.workerAckTotal||0)+' acked', time:'', sig:null},
+      {icon:'🏭', label:'Acceptor',   done:!!sh.acceptorSignTime,   detail:esc(sh.acceptorName||'—'),  time:sh.acceptorSignTime||'', sig:acceptorSig},
+      {icon:'🛡️', label:'Safety',    done:!!sh.safetySignTime,     detail:esc(sh.safetyName||'—'),    time:sh.safetySignTime||'', sig:safetySig},
+      {icon:'👔', label:'Duty Ofcr', done:!!sh.dutyOfficerSignTime, detail:sh.dutyOfficerSignTime?esc(sh.dutyOfficerName||'—'):'—', time:sh.dutyOfficerSignTime||'', sig:dutySig},
+      {icon:'▶',  label:'Start',     done:!!sh.jobStartTime,  detail:sh.jobStartTime?fd(sh.jobStartTime):'',  time:'', sig:null},
+      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?fd(sh.jobStopTime):'',    time:'', sig:null},
     ];
     const stepHtml = steps.map(function(s) {
+      const visual = (s.sig && s.sig.signatureData)
+        ? '<img src="'+s.sig.signatureData+'" style="height:20px;max-width:90%;object-fit:contain;display:block;margin:0 auto">'
+        : '<div style="font-size:14px'+(s.done?'':';filter:grayscale(1);opacity:.4')+'">'+s.icon+'</div>';
       return '<div style="text-align:center;padding:6px 4px;border-radius:8px;background:'+(s.done?'#f0fdf4':'#f8fafc')+';border:1px solid '+(s.done?'#86efac':'#e2e8f0')+'">'
-        +'<div style="font-size:14px'+(s.done?'':';filter:grayscale(1);opacity:.4')+'">'+s.icon+'</div>'
+        +visual
         +'<div style="font-size:9px;font-weight:700;color:#64748b;margin-top:2px;text-transform:uppercase">'+s.label+'</div>'
         +'<div style="font-size:9px;color:'+(s.done?'#14532d':'#94a3b8')+';margin-top:1px;font-weight:'+(s.done?700:400)+'">'+s.detail+'</div>'
         +(s.time?'<div style="font-size:8px;color:#94a3b8;margin-top:1px">'+fd(s.time)+'</div>':'')
@@ -5869,6 +5904,8 @@ function openAddShiftModal(permitNo) {
   document.getElementById('shift-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('shift-shift').value = '';
   document.getElementById('shift-remarks').value = '';
+  document.getElementById('shift-tbt-topic').value = '';
+  document.getElementById('shift-tbt-by').value = '';
   document.getElementById('shift-err').style.display = 'none';
   document.getElementById('shift-worker-search').value = '';
   document.getElementById('shift-worker-results').style.display = 'none';
@@ -5927,18 +5964,22 @@ function addShiftWorker(r) {
 }
 
 async function saveShift() {
-  const no      = document.getElementById('shift-permit-no').value;
-  const date    = document.getElementById('shift-date').value;
-  const shift   = document.getElementById('shift-shift').value;
-  const remarks = document.getElementById('shift-remarks').value.trim();
-  const errEl   = document.getElementById('shift-err');
+  const no       = document.getElementById('shift-permit-no').value;
+  const date     = document.getElementById('shift-date').value;
+  const shift    = document.getElementById('shift-shift').value;
+  const remarks  = document.getElementById('shift-remarks').value.trim();
+  const tbtTopic = document.getElementById('shift-tbt-topic').value.trim();
+  const tbtBy    = document.getElementById('shift-tbt-by').value.trim();
+  const errEl    = document.getElementById('shift-err');
   errEl.style.display='none';
-  if (!date)  { errEl.textContent='Select a date.';  errEl.style.display='block'; return; }
-  if (!shift) { errEl.textContent='Select a shift.'; errEl.style.display='block'; return; }
+  if (!date)     { errEl.textContent='Select a date.';  errEl.style.display='block'; return; }
+  if (!shift)    { errEl.textContent='Select a shift.'; errEl.style.display='block'; return; }
   if (!_shiftWorkers.length) { errEl.textContent='Add at least one worker for this shift.'; errEl.style.display='block'; return; }
+  if (!tbtTopic) { errEl.textContent='Tool Box Talk topic is required before adding a shift.'; errEl.style.display='block'; return; }
+  if (!tbtBy)    { errEl.textContent='Tool Box Talk — Conducted By is required.'; errEl.style.display='block'; return; }
   load(true,'Adding shift…');
   try {
-    await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers });
+    await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers, tbtTopic, tbtBy });
     load(false);
     document.getElementById('shift-modal').classList.remove('open');
     toast('Shift added — workers must acknowledge via QR Scanner ✅','ok');
