@@ -2503,36 +2503,38 @@ async function renderForm() {
       <!-- ADD WORK ENTRY PANEL -->
       <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Add Work Entry</div>
-        <div style="display:grid;grid-template-columns:1fr 120px 120px 1fr;gap:10px;align-items:end;flex-wrap:wrap">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin-bottom:10px">
           <div class="ptw-field" style="margin-bottom:0">
             <label>Work Date *</label>
-            <input type="date" id="we-date" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none" onchange="onWorkEntryChange()">
+            <input type="date" id="we-date" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none">
           </div>
           <div class="ptw-field" style="margin-bottom:0">
-            <label>From (hrs)</label>
-            <input type="time" id="we-from" value="06:00" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none" onchange="onWorkEntryChange()">
-          </div>
-          <div class="ptw-field" style="margin-bottom:0">
-            <label>To (hrs)</label>
-            <input type="time" id="we-to" value="14:00" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none" onchange="onWorkEntryChange()">
-          </div>
-          <div>
-            <button type="button" onclick="addWorkEntry()" class="btn btn-primary" style="width:100%;justify-content:center;padding:9px">＋ Add Entry</button>
+            <label>Shift *</label>
+            <select id="we-shift-select" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none" onchange="onShiftSelectChange()">
+              <option value="">— Select Shift —</option>
+              <option value="First Shift (06:00–14:00)">First Shift (06:00–14:00)</option>
+              <option value="Second Shift (14:00–22:00)">Second Shift (14:00–22:00)</option>
+              <option value="Third Shift (22:00–06:00)">Third Shift (22:00–06:00)</option>
+              <option value="General Shift (09:15–17:15)">General Shift (09:15–17:15)</option>
+            </select>
           </div>
         </div>
 
-        <!-- Auto-detected shift display -->
-        <div style="margin-top:10px">
-          <label class="field-label">Shift *</label>
-          <select id="we-shift-select" class="field" style="max-width:360px" onchange="const dw=document.getElementById('we-duty-warn');if(dw)dw.style.display=this.value.indexOf('Third')>-1?'block':'none'">
-            <option value="">— Select Shift —</option>
-            <option value="First Shift (06:00–14:00)">First Shift (06:00–14:00)</option>
-            <option value="Second Shift (14:00–22:00)">Second Shift (14:00–22:00)</option>
-            <option value="Third Shift (22:00–06:00)">Third Shift (22:00–06:00)</option>
-            <option value="General Shift (09:15–17:15)">General Shift (09:15–17:15)</option>
-          </select>
-          <div id="we-duty-warn" style="display:none;margin-top:6px;padding:4px 10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;font-size:11px;color:#6d28d9;font-weight:700;display:inline-block">
-            ⚠️ Third Shift requires Duty Officer approval
+        <div id="we-duty-warn" style="display:none;margin-bottom:10px;padding:4px 10px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;font-size:11px;color:#6d28d9;font-weight:700">
+          ⚠️ Third Shift requires Duty Officer approval
+        </div>
+
+        <div style="display:grid;grid-template-columns:120px 120px 1fr;gap:10px;align-items:end;flex-wrap:wrap">
+          <div class="ptw-field" style="margin-bottom:0">
+            <label>From (hrs)</label>
+            <input type="time" id="we-from" value="06:00" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none">
+          </div>
+          <div class="ptw-field" style="margin-bottom:0">
+            <label>To (hrs)</label>
+            <input type="time" id="we-to" value="14:00" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:100%;outline:none">
+          </div>
+          <div>
+            <button type="button" onclick="addWorkEntry()" class="btn btn-primary" style="width:100%;justify-content:center;padding:9px">＋ Add Entry</button>
           </div>
         </div>
         <div id="we-err" style="display:none;color:var(--red);font-size:12px;margin-top:6px;padding:5px 10px;background:#fef2f2;border-radius:4px"></div>
@@ -2924,28 +2926,28 @@ function detectShifts(fromStr, toStr) {
   return { shifts: covered, dutyRequired, shift3: shift3Covered };
 }
 
-function onWorkEntryChange() {
-  const dateVal = document.getElementById('we-date').value;
-  const fromVal = document.getElementById('we-from').value;
-  const toVal   = document.getElementById('we-to').value;
-  const preview = document.getElementById('we-shift-preview');
-  const badges  = document.getElementById('we-shift-badges');
-  const dutyW   = document.getElementById('we-duty-warn');
-  const sh3W    = document.getElementById('we-shift3-warn');
-  const errEl   = document.getElementById('we-err');
+// Legacy no-op — kept so older callers (e.g. onWorkEntryDateMin) don't break.
+// Auto shift-detection was replaced by the manual Shift dropdown (see onShiftSelectChange).
+function onWorkEntryChange() {}
 
-  errEl.style.display = 'none';
-  if (!dateVal || !fromVal || !toVal) { preview.style.display='none'; return; }
+// Fixed shift time ranges — selecting a shift auto-fills From/To.
+const SHIFT_TIME_MAP = {
+  'First Shift (06:00–14:00)':   { from:'06:00', to:'14:00' },
+  'Second Shift (14:00–22:00)':  { from:'14:00', to:'22:00' },
+  'Third Shift (22:00–06:00)':   { from:'22:00', to:'06:00' },
+  'General Shift (09:15–17:15)': { from:'09:15', to:'17:15' }
+};
 
-  const { shifts, dutyRequired, shift3 } = detectShifts(fromVal, toVal);
-
-  badges.innerHTML = shifts.map(s =>
-    `<span style="padding:3px 10px;border-radius:10px;background:${s.color||0}22;color:${s.color||0};border:1px solid ${s.color||0}44;font-size:12px;font-weight:700">${s.label||0}</span>`
-  ).join('');
-
-  dutyW.style.display  = dutyRequired && !shift3 ? 'flex' : 'none';
-  sh3W.style.display   = shift3                  ? 'flex' : 'none';
-  preview.style.display = 'block';
+function onShiftSelectChange() {
+  const sel = document.getElementById('we-shift-select');
+  const val = sel ? sel.value : '';
+  const t = SHIFT_TIME_MAP[val];
+  if (t) {
+    const f = document.getElementById('we-from'); if (f) f.value = t.from;
+    const to = document.getElementById('we-to');  if (to) to.value = t.to;
+  }
+  const dw = document.getElementById('we-duty-warn');
+  if (dw) dw.style.display = val.indexOf('Third') > -1 ? 'block' : 'none';
 }
 
 function addWorkEntry() {
@@ -3064,9 +3066,9 @@ function renderEntriesList() {
 }
 
 function renderEntryCard(e, isOpen, dayNum) {
-  const shiftBadges = e.shifts.map(s=>
-    `<span style="padding:2px 8px;border-radius:10px;background:${s.color||0}22;color:${s.color||0};border:1px solid ${s.color||0}44;font-size:11px;font-weight:700">${s.label||0}</span>`
-  ).join('');
+  const shiftBadges = e.shift
+    ? `<span style="padding:2px 8px;border-radius:10px;background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;font-size:11px;font-weight:700">${esc(e.shift)}</span>`
+    : '';
 
   return `<div style="border:1.5px solid ${isOpen?'var(--blue)':'var(--border)'};border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px">
     <!-- Entry header -->
@@ -3327,9 +3329,8 @@ function collectShiftsByDay() {
     dateLabel:    e.dateLabel,
     from:         e.from,
     to:           e.to,
-    shifts:       e.shifts.map(s=>s.label),
+    shift:        e.shift,
     dutyRequired: e.dutyRequired,
-    shift3:       e.shift3,
     workers:      e.workers
   }));
 }
@@ -3575,14 +3576,7 @@ function buildView(el, p, log, tests, scans, sigs) {
     acts+=`<button class="btn btn-blue" onclick="doSign('${p.permitNo}','start')">▶ Sign START</button><button class="btn btn-ghost btn-sm" onclick="openScannerPage('${p.permitNo}')" style="color:var(--green)">📷 Scan Worker</button>`;
   if (p.status==='Active'&&p.jobStartTime&&!p.jobStopTime)
     acts+=`<button class="btn btn-amber" onclick="doSign('${p.permitNo}','stop')">⏹ Sign STOP</button>`;
-  // ── Daily Entry Action Buttons ────────────────────────────
-  if (p.status==='Active' && isOrig && !_permitExpired)
-    acts+=`<button class="btn btn-sm" onclick="openAddDailyEntry('${p.permitNo}')" style="background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border:none">📅 Add Day Workers</button>`;
-  if (p.status==='Active' && isAcc && _pendingDailyAcc)
-    acts+=`<button class="btn btn-green btn-sm" onclick="doApproveDailyEntry('${p.permitNo}','${_pendingDailyAcc.entryId}','Acceptor')">✅ Approve Day ${_pendingDailyAcc.dayNo} (Acceptor)</button>`;
-  if (p.status==='Active' && isSaf && _pendingDailySaf)
-    acts+=`<button class="btn btn-green btn-sm" onclick="doApproveDailyEntry('${p.permitNo}','${_pendingDailySaf.entryId}','Safety Officer')">✅ Approve Day ${_pendingDailySaf.dayNo} (Safety)</button>`;
-  // ──────────────────────────────────────────────────────────
+  // (Legacy 'Daily Entry' action buttons removed — superseded by Add Shift / shifts[])
   // ── Closure Sequence Signing ─────────────────────────────────
   // Step 1: Job Performer signs via Scanner (status set by scanner QR)
   // Step 2: Originator signs
@@ -3679,11 +3673,34 @@ function buildView(el, p, log, tests, scans, sigs) {
   </div>
   ${expAlert}
 
-  <div class="layout-split">
-    <!-- LEFT -->
-    <div style="display:flex;flex-direction:column;gap:14px">
+  
+  <!-- Single-column layout (shift-wise model — see redesign) -->
+  <div style="display:flex;flex-direction:column;gap:14px">
 
-      <!-- Work Details -->
+    <!-- Emergency -->
+      <div class="highlight-card hc-red" style="padding:14px 16px">
+        <div style="font-weight:800;color:#7f1d1d;font-size:15px;margin-bottom:4px">🚨 Emergency Contacts</div>
+        <div style="font-size:14px;color:#7f1d1d">HLL: <strong>555</strong> (Fire / Medical)</div>
+        ${ex.contractorEmergency?`<div style="font-size:13px;color:#7f1d1d;margin-top:4px">Contractor: <strong>${esc(ex.contractorEmergency)}</strong></div>`:''}
+      </div>
+
+      <!-- Quick Status -->
+      ${renderQuickStatus(p, ex)}
+
+      <!-- Shift-wise Approval & Activity Record — Section 07 -->
+      ${(ex.shifts||[]).length ? `
+      <div class="card" id="shifts-section" style="border-top:3px solid var(--blue)">
+        <div class="form-section-header">
+          <div class="fs-num">07</div>
+          <div class="fs-title">Shift-wise Approval &amp; Activity Record</div>
+        </div>
+        ${renderShiftsTimeline(ex.shifts, ex, sigs)}
+      </div>` : ''}
+
+      <details class="card" style="padding:0">
+        <summary style="cursor:pointer;padding:16px 18px;font-weight:700;font-size:13px;color:var(--navy);list-style:none">▸ Permit Details — Work Info, Hazards, PPE, Gas Tests &amp; Tool Box Talk</summary>
+        <div style="padding:0 18px 18px">
+          <!-- Work Details -->
       <div class="card">
         <div class="form-section-header"><div class="fs-num">01</div><div class="fs-title">Work Details</div></div>
         <dl style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:13px">
@@ -3793,351 +3810,22 @@ function buildView(el, p, log, tests, scans, sigs) {
         ${tbt.notes?`<div style="margin-top:8px;font-size:12px;color:var(--slate)"><strong>Notes:</strong> ${esc(tbt.notes)}</div>`:''}
       </div>
 
-      <!-- Workers / Persons at Site — Section 07 -->
-      ${workers.length?`
+      <!-- Competency & Medical -->
       <div class="card">
-        <div class="form-section-header">
-          <div class="fs-num">07</div>
-          <div class="fs-title">Persons at Site</div>
-          <div style="margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${_allWorkersAcked?'#dcfce7':'#fef3c7'};color:${_allWorkersAcked?'#14532d':'#92400e'}">
-            ${_ackedWorkers} / ${_totalWorkers} QR Signed
+        <div class="form-section-header"><div class="fs-num">ℹ️</div><div class="fs-title">Competency & Medical</div></div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px">
+          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Competent Party</div>
+            <div>${ex.competentPartyRequired||'No'}${ex.competentPartyCert?' — '+esc(ex.competentPartyCert):''}</div>
+          </div>
+          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Medical Certificate (Height)</div>
+            <div>${ex.medicalCertRequired||'NA'}${ex.medicalCertDetails?' — '+esc(ex.medicalCertDetails):''}</div>
           </div>
         </div>
-
-        <!-- Mandatory QR signing banner — shown when acks are pending -->
-        ${!_allWorkersAcked?`
-        <div style="background:#fef3c7;border:1.5px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px">
-          <span style="font-size:20px;flex-shrink:0">🔒</span>
-          <div>
-            <div style="font-size:12px;font-weight:700;color:#92400e">QR Signing Mandatory — ${_unackedWorkers.length} worker(s) pending</div>
-            <div style="font-size:11px;color:#78350f;margin-top:3px;line-height:1.6">
-              All listed workers must scan their induction QR code via the Scanner before
-              the Acceptor can approve this permit. Pending:
-              <strong>${_unackedWorkers.map(w=>esc(w.name||w.certNo||'?')).join(', ')}</strong>
-            </div>
-          </div>
-        </div>`:
-        `<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 14px;margin-bottom:12px;font-size:12px;color:#14532d;font-weight:700">
-          ✅ All workers have signed via QR — Acceptor may proceed with approval.
-        </div>`}
-
-        <!-- Per-worker signing table -->
-
-        <!-- ── Shifts Approval Timeline ──────────────────────────── -->
-        ${(ex.shifts||[]).length > 0 ? renderShiftsTimeline(ex.shifts, ex, sigs) : ''}
-
-        ${(ex.shifts||[]).length === 0 && (ex.additionalShifts||[]).length ? `
-        <div style="margin-top:14px;border-top:2px solid #e0f2fe;padding-top:12px">
-          <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
-            📅 Additional Shifts
-          </div>
-          ${(ex.additionalShifts||[]).map((sh,si)=>`
-          <div style="border:1px solid #bae6fd;border-radius:8px;overflow:hidden;margin-bottom:10px">
-            <div style="background:#e0f2fe;padding:7px 12px;display:flex;align-items:center;justify-content:space-between">
-              <div style="font-size:12px;font-weight:700;color:#0369a1">
-                ${esc(sh.date)} &nbsp;·&nbsp; ${esc(sh.shift)}
-              </div>
-              <span style="font-size:11px;padding:2px 10px;border-radius:99px;background:${(sh.ackedCount||0)>=(sh.totalWorkers||1)?'#dcfce7':'#fef3c7'};color:${(sh.ackedCount||0)>=(sh.totalWorkers||1)?'#14532d':'#92400e'};font-weight:700">
-                ${sh.ackedCount||0} / ${sh.totalWorkers||0} acked
-              </span>
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:11px">
-              <thead><tr style="background:#f0f9ff">
-                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">#</th>
-                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Worker Name</th>
-                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Cert No.</th>
-                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Company</th>
-                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:center">Ack</th>
-                <th style="padding:4px 8px;border-bottom:1px solid #e0f2fe;text-align:left">Ack Time</th>
-              </tr></thead>
-              <tbody>
-                ${(sh.workers||[]).map((w,wi)=>`<tr style="background:${w.acked?'#f0fdf4':wi%2?'#fafafa':'#fff'}">
-                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center;color:var(--slate)">${wi+1}</td>
-                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-weight:600">${esc(w.name||'—')}</td>
-                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-family:monospace;font-size:10px">${esc(w.certNo||'—')}</td>
-                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;color:var(--slate)">${esc(w.company||w.contractor||'—')}</td>
-                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;text-align:center">${w.acked?'<span style="color:#10b981;font-weight:800">✓</span>':'<span style="color:#f59e0b;font-size:10px">Pending</span>'}</td>
-                  <td style="padding:4px 8px;border-bottom:1px solid #f1f5f9;font-size:10px;color:var(--slate)">${w.ackedAt?fd(w.ackedAt):'—'}</td>
-                </tr>`).join('') || '<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--slate)">No workers</td></tr>'}
-              </tbody>
-            </table>
-          </div>`).join('')}
-        </div>` : ''}
-
-        <div style="overflow-x:auto">
-          <table class="worker-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Company / Contractor</th>
-                <th>Cert / ID No.</th>
-                <th style="text-align:center">QR Signed</th>
-                <th>Signed At</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${workers.map((w,idx)=>`<tr style="background:${w.acked?'#f0fdf4':'#fff'}">
-                <td style="text-align:center;color:var(--slate)">${idx+1}</td>
-                <td style="font-weight:600">${esc(w.name||'—')}</td>
-                <td>${esc(w.company||w.contractor||'—')}</td>
-                <td style="font-family:monospace;font-size:12px">${esc(w.certNo||w.idNo||'—')}</td>
-                <td style="text-align:center">
-                  ${w.acked
-                    ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;background:#dcfce7;color:#14532d;font-size:11px;font-weight:700">✓ Signed</span>`
-                    : `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:99px;background:#fef3c7;color:#92400e;font-size:11px;font-weight:700">⏳ Pending QR</span>`
-                  }
-                </td>
-                <td style="font-size:11px;color:var(--slate)">${w.ackTime?fd(w.ackTime):'—'}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>` : ''}
-
-      <!-- ── 7-Day Daily Work Log ───────────────────────────── -->
-      ${(p.status==='Active'||_dailyEntries.length)?`
-      <div class="card" style="border-top:3px solid #3b82f6">
-        <div class="form-section-header" style="margin-bottom:14px">
-          <div class="fs-num" style="background:#3b82f6">📅</div>
-          <div class="fs-title">7-Day Daily Work Log</div>
-          ${_expiresAt?`<span style="margin-left:auto;font-size:11px;padding:3px 12px;border-radius:99px;font-weight:700;background:${_permitExpired?'#fee2e2':'#dcfce7'};color:${_permitExpired?'#991b1b':'#14532d'}">${_permitExpired?'⚠ Permit Expired':'✓ Valid until '+fd(ex.expiresAt)}</span>`:''}
-        </div>
-
-        <!-- Validity progress bar -->
-        ${_activatedAt?`
-        <div style="background:var(--bg);border-radius:8px;padding:12px 14px;margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate);margin-bottom:6px">
-            <span>Day <strong style="color:var(--navy);font-size:13px">${_daysElapsed}</strong> of <strong>7</strong></span>
-            <span>Activated: <strong>${fd(ex.activatedAt)}</strong></span>
-            ${_expiresAt?`<span>Expires: <strong>${fd(ex.expiresAt)}</strong></span>`:''}
-          </div>
-          <div style="height:10px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:6px">
-            <div style="width:${Math.round(_daysElapsed/7*100)}%;height:100%;background:${_daysElapsed>=6?'#ef4444':_daysElapsed>=4?'#f59e0b':'#10b981'};border-radius:99px;transition:width .4s ease"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between">
-            ${[1,2,3,4,5,6,7].map(d=>{
-              const dayEntry = d===1 ? null : _dailyEntries.find(e=>e.dayNo===d);
-              const isToday  = d===_daysElapsed;
-              const isPast   = d<_daysElapsed;
-              const dayBg    = dayEntry&&dayEntry.status==='Day Active'?'#10b981':dayEntry?'#f59e0b':isPast?'#94a3b8':isToday?'#3b82f6':'#e2e8f0';
-              const dayColor = d<=_daysElapsed||dayEntry?'#fff':'#94a3b8';
-              return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-                <div style="width:24px;height:24px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;background:${dayBg};color:${dayColor}">D${d}</div>
-                <div style="font-size:9px;color:${isToday?'var(--blue)':'var(--slate)'};font-weight:${isToday?'700':'400'}">${isToday?'Today':''}</div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>` : ''}
-
-        <!-- Day 1 — Original Permit (always shown) -->
-        <div style="margin-bottom:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Day 1 — Initial Permit Authorisation</div>
-          <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:12px 14px">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-              <span style="background:#14532d;color:#fff;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700">✅ Day Active</span>
-              ${_activatedAt?`<span style="font-size:11px;color:var(--slate)">Since ${fd(ex.activatedAt)}</span>`:''}
-            </div>
-            <div style="font-size:12px;color:var(--navy-mid)">
-              ${(ex.workEntries||[]).reduce((t,e)=>t+(e.workers||[]).length,0)} worker(s) across ${(ex.workEntries||[]).length} shift group(s)
-            </div>
-            <div style="font-size:11px;color:var(--slate);margin-top:4px">
-              Full workflow: Originator → Worker Ack → Acceptor → Safety ✓
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">
-              ${(ex.workEntries||[]).flatMap(e=>e.workers||[]).map(w=>`
-              <span style="padding:3px 10px;border-radius:99px;background:#dcfce7;border:1px solid #86efac;font-size:11px;color:#14532d;font-weight:600">${esc(w.name||w.workerName||'?')} <span style="opacity:.7">${esc(w.certNo||'')}</span></span>`).join('')}
-            </div>
-          </div>
-        </div>
-
-        <!-- Day 2–7 Entries -->
-        ${_dailyEntries.length?`
-        <div>
-          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Day 2–7 Work Entries (${_dailyEntries.length} added)</div>
-          ${_dailyEntries.map(de=>{
-            const SC={'Pending Worker Acknowledgement':'#92400e','Pending Acceptor':'#1e40af','Pending Safety':'#1e40af','Day Active':'#14532d','Rejected':'#991b1b'};
-            const SB={'Pending Worker Acknowledgement':'#fef3c7','Pending Acceptor':'#dbeafe','Pending Safety':'#dbeafe','Day Active':'#dcfce7','Rejected':'#fee2e2'};
-            const SI={'Pending Worker Acknowledgement':'✍','Pending Acceptor':'⏳','Pending Safety':'⏳','Day Active':'✅','Rejected':'✕'};
-            const bc = de.status==='Day Active'?'#86efac':de.status==='Rejected'?'#fca5a5':'#e2e8f0';
-            const STAGES = ['Pending Worker Acknowledgement','Pending Acceptor','Pending Safety','Day Active'];
-            const si = STAGES.indexOf(de.status);
-            const canDeleteEntry = (isOrig && ['Rejected','Pending Worker Acknowledgement'].includes(de.status));
-            return `<div style="border:1.5px solid ${bc};border-radius:8px;overflow:hidden;margin-bottom:10px">
-              <!-- Entry header -->
-              <div style="background:${SB[de.status]||'#f3f4f6'};padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-                <div style="display:flex;align-items:center;gap:10px">
-                  <span style="font-size:15px;font-weight:800;color:${SC[de.status]||'#374151'}">Day ${de.dayNo}</span>
-                  <span style="font-size:12px;color:var(--slate)">${de.dateLabel||de.date}</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                  <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${SC[de.status]||'#374151'};color:#fff">${SI[de.status]||'•'} ${de.status}</span>
-                  ${canDeleteEntry?`<button onclick="deleteDailyEntryUI('${p.permitNo}','${de.entryId}')" style="padding:3px 8px;border-radius:5px;border:1px solid #fca5a5;background:#fff;color:#dc2626;font-size:10px;cursor:pointer">🗑 Remove</button>`:''}
-                </div>
-              </div>
-              <!-- Entry body -->
-              <div style="padding:12px 14px;background:#fff">
-                <div style="font-size:11px;color:var(--slate);margin-bottom:8px">
-                  <strong>Shifts:</strong> ${(de.shiftLabels||de.shifts||[]).join(' · ')||'—'}
-                </div>
-                <!-- Workers — shift-wise table -->
-                <div style="margin-bottom:10px;overflow-x:auto">
-                  <table style="width:100%;border-collapse:collapse;font-size:11px">
-                    <thead><tr style="background:#f8fafc">
-                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">#</th>
-                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Worker Name</th>
-                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Cert No.</th>
-                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Company</th>
-                      <th style="padding:5px 8px;text-align:center;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Ack</th>
-                      <th style="padding:5px 8px;text-align:left;border:1px solid #e2e8f0;color:var(--slate);font-weight:700">Ack Time</th>
-                    </tr></thead>
-                    <tbody>
-                      ${(de.workers||[]).map((w,wi)=>`<tr style="background:${wi%2?'#fafafa':'#fff'}">
-                        <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center">${wi+1}</td>
-                        <td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600;color:var(--navy)">${esc(w.name||'—')}</td>
-                        <td style="padding:4px 8px;border:1px solid #e2e8f0;font-family:monospace;font-size:10px">${esc(w.certNo||'—')}</td>
-                        <td style="padding:4px 8px;border:1px solid #e2e8f0;color:var(--slate)">${esc(w.company||w.contractor||'—')}</td>
-                        <td style="padding:4px 8px;border:1px solid #e2e8f0;text-align:center">${w.acked?'<span style="color:#10b981;font-weight:700">✓</span>':'<span style="color:#94a3b8">—</span>'}</td>
-                        <td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:10px;color:var(--slate)">${w.ackedAt?fd(w.ackedAt):'—'}</td>
-                      </tr>`).join('')||'<tr><td colspan="6" style="padding:8px;text-align:center;color:var(--slate)">No workers</td></tr>'}
-                    </tbody>
-                  </table>
-                </div>
-                <!-- Additional shifts for this day -->
-                ${(ex.additionalShifts||[]).filter(s=>s.date===de.date).map(sh=>`
-                  <div style="margin-top:8px;border:1px solid #bfdbfe;border-radius:6px;overflow:hidden">
-                    <div style="background:#eff6ff;padding:5px 10px;font-size:11px;font-weight:700;color:#1e40af">
-                      ➕ ${esc(sh.shift)} — ${esc(sh.date)} &nbsp;·&nbsp; ${sh.ackedCount||0}/${sh.totalWorkers||0} workers acked
-                    </div>
-                    <table style="width:100%;border-collapse:collapse;font-size:11px">
-                      <tbody>
-                        ${(sh.workers||[]).map((w,wi)=>`<tr style="background:${wi%2?'#fafafa':'#fff'}">
-                          <td style="padding:3px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;color:var(--navy)">${esc(w.name||'—')}</td>
-                          <td style="padding:3px 8px;border-bottom:1px solid #e2e8f0;font-family:monospace;font-size:10px">${esc(w.certNo||'—')}</td>
-                          <td style="padding:3px 8px;border-bottom:1px solid #e2e8f0;text-align:center">${w.acked?'<span style="color:#10b981;font-weight:700">✓ Acked</span>':'<span style="color:#f59e0b">Pending</span>'}</td>
-                        </tr>`).join('')}
-                      </tbody>
-                    </table>
-                  </div>`).join('')}
-                
-                <!-- Ack progress bar (only when pending ack) -->
-                ${de.status==='Pending Worker Acknowledgement'?`
-                <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                  <span style="font-size:12px;color:#92400e">✍ <strong>${de.workerAckCount||0} / ${de.workerAckTotal||de.workers.length}</strong> workers acknowledged</span>
-                  ${(isOrig||isSaf)?`<button onclick="openDailyScanner('${p.permitNo}','${de.entryId}')" style="padding:4px 12px;border-radius:5px;border:1.5px solid #d97706;background:#fff;color:#92400e;cursor:pointer;font-size:11px;font-weight:700">📷 Scan to Ack</button>`:''}
-                </div>` : ''}
-                <!-- Mini workflow progress -->
-                <div style="display:flex;align-items:center;gap:2px;font-size:10px;flex-wrap:wrap;margin-bottom:6px">
-                  ${['Worker Ack','Acceptor','Safety Officer','Active'].map((lbl,idx)=>{
-                    const done = si>idx;
-                    const act  = si===idx && de.status!=='Rejected';
-                    return `<span style="display:inline-flex;align-items:center;gap:3px">
-                      <span style="width:18px;height:18px;border-radius:50%;flex-shrink:0;background:${done?'#10b981':act?'#f59e0b':'#e2e8f0'};color:${done||act?'#fff':'#9ca3af'};display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${done?'✓':idx+1}</span>
-                      <span style="color:${done?'#10b981':act?'#d97706':'#9ca3af'};font-weight:${act?'700':'400'}">${lbl}</span>
-                      ${idx<3?`<span style="color:#d1d5db;margin:0 2px">›</span>`:''}
-                    </span>`;
-                  }).join('')}
-                </div>
-                <!-- Approval stamps -->
-                ${de.acceptorApprovedAt?`<div style="font-size:11px;color:var(--slate);margin-top:4px">Acceptor: <strong>${esc(de.acceptorApprovedBy||'—')}</strong> · ${fd(de.acceptorApprovedAt)}${de.acceptorComments?` · "${esc(de.acceptorComments)}"`:''}</div>`:''}
-                ${de.safetyApprovedAt?`<div style="font-size:11px;color:var(--slate);margin-top:2px">Safety: <strong>${esc(de.safetyApprovedBy||'—')}</strong> · ${fd(de.safetyApprovedAt)}${de.safetyComments?` · "${esc(de.safetyComments)}"`:''}</div>`:''}
-                ${de.rejectionReason?`<div style="font-size:11px;color:#dc2626;font-weight:600;margin-top:4px;padding:6px 10px;background:#fee2e2;border-radius:5px">✕ Rejected by ${esc(de.rejectedBy||'—')}: ${esc(de.rejectionReason)}</div>`:''}
-                ${de.activatedAt&&de.status==='Day Active'?`<div style="font-size:11px;color:#14532d;font-weight:600;margin-top:4px">✅ Day authorised at ${fd(de.activatedAt)}</div>`:''}
-
-                <!-- TBT for this day -->
-                ${(de.tbt&&Object.keys(de.tbt).some(k=>k!=='notes'&&de.tbt[k]))?`
-                <div style="margin-top:10px;border-top:1px solid #f1f5f9;padding-top:10px">
-                  <div style="font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">📋 Tool Box Talk</div>
-                  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
-                    ${TBT.map(item=>{
-                      const val = de.tbt[item.k];
-                      const col = val==='Yes'?'#14532d':val==='No'?'#991b1b':'#64748b';
-                      const bg  = val==='Yes'?'#dcfce7':val==='No'?'#fee2e2':'#f8fafc';
-                      const bdr = val==='Yes'?'#86efac':val==='No'?'#fca5a5':'#e2e8f0';
-                      return `<div style="padding:5px 7px;border-radius:6px;background:${bg};border:1px solid ${bdr};font-size:10px">
-                        <div style="color:#64748b;font-size:9px;line-height:1.2;margin-bottom:2px">${esc(item.label||item.k)}</div>
-                        <div style="font-weight:700;color:${col}">${esc(val||'—')}</div>
-                      </div>`; return `<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:${bg};color:${col};border:1px solid ${col}33">
-                        ${esc(item.l)}: <strong>${val}</strong>
-                      </span>`;
-                    }).join('')}
-                  </div>
-                  ${de.tbt.notes?`<div style="font-size:11px;color:var(--slate)">Notes: ${esc(de.tbt.notes)}</div>`:''}
-                </div>` : ''}
-
-                <!-- Gas tests for this day -->
-                ${(de.gasTests&&de.gasTests.length)?`
-                <div style="margin-top:10px;border-top:1px solid #f1f5f9;padding-top:10px">
-                  <div style="font-size:10px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">🔬 Gas Test Records</div>
-                  <div style="overflow-x:auto">
-                    <table style="width:100%;border-collapse:collapse;font-size:11px">
-                      <thead>
-                        <tr style="background:#f8fafc">
-                          <th style="padding:4px 8px;text-align:left;border:1px solid #e2e8f0">O₂%</th>
-                          <th style="padding:4px 8px;text-align:left;border:1px solid #e2e8f0">HC%</th>
-                          <th style="padding:4px 8px;text-align:left;border:1px solid #e2e8f0">Toxic PPM</th>
-                          <th style="padding:4px 8px;text-align:left;border:1px solid #e2e8f0">Time</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${de.gasTests.map(g=>`<tr>
-                          <td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:700;color:${(g.o2>=19.3&&g.o2<=23.5)?'#14532d':'#dc2626'}">${g.o2||'—'}</td>
-                          <td style="padding:4px 8px;border:1px solid #e2e8f0">${g.hc||0}</td>
-                          <td style="padding:4px 8px;border:1px solid #e2e8f0">${g.toxic||0}</td>
-                          <td style="padding:4px 8px;border:1px solid #e2e8f0;color:var(--slate)">${esc(g.time||'—')}</td>
-                        </tr>`).join('')}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>` : ''}
-              </div>
-            </div>`;
-          }).join('')}
-        </div>` : `<div style="padding:8px 0;font-size:12px;color:var(--slate)">
-          No additional daily entries yet.
-          ${isOrig&&p.status==='Active'&&!_permitExpired?` Click <strong>📅 Add Day Workers</strong> in the toolbar above to add Day 2 workers.`:''}
-        </div>`}
-      </div>` : ''}
-      <!-- ──────────────────────────────────────────────────── -->
-
-      <!-- Approval Comments -->
-      ${approvalComments.length?`
-      <div class="card">
-        <div class="form-section-header"><div class="fs-num">💬</div><div class="fs-title">Approval Comments</div></div>
-        ${approvalComments.map(c=>`
-          <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;border-left:3px solid var(--blue)">
-            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:4px">${esc(c.action)} — ${esc(c.by)} (${esc(c.role)}) · ${fd(c.time)}</div>
-            <div style="font-size:13px;color:var(--navy-mid)">${esc(c.comments)||'<em style="color:var(--slate)">No comments added</em>'}</div>
-          </div>`).join('')}
-      </div>` : ''}
-
-      <!-- Audit Trail -->
-      <div class="card">
-        <div class="form-section-header"><div class="fs-num">📋</div><div class="fs-title">Audit Trail</div></div>
-        ${auditTable(log, sigMap)}
-
-        <!-- Worker Scans -->
-        ${scans.length?`<div style="margin-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Worker QR Sign Records</div>
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr style="background:#f8fafc">
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Name</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Company</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Cert No.</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Action</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Date & Time</th>
-            </tr>
-            ${scans.map(s=>`<tr>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(s.workerName||'')}</td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${esc(s.contractor||'')}</td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px">${esc(s.certNo||'')}</td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0"><span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${s.scanType==='Acknowledgement'?'#dcfce7':s.scanType==='Start'?'#eff6ff':s.scanType==='Stop'?'#fef3c7':'#f3e8ff'};color:${s.scanType==='Acknowledgement'?'#14532d':s.scanType==='Start'?'#1e40af':s.scanType==='Stop'?'#92400e':'#6b21a8'}">${esc(s.scanType||'')}</span></td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${fmtDT(s.time)}</td>
-            </tr>`).join('')}
-          </table>
-        </div>`:''}
-
       </div>
+        </div>
+      </details>
 
       <!-- SECTION 8: Closure Panel (shown when Close Permit is clicked) -->
       <div id="sec8-closure-panel" style="display:none;border:2px solid var(--green);border-radius:var(--radius);overflow:hidden;margin-top:2px">
@@ -4191,49 +3879,52 @@ function buildView(el, p, log, tests, scans, sigs) {
         </div>
       </div>
 
-    </div>
-
-    <!-- RIGHT -->
-    <div style="display:flex;flex-direction:column;gap:14px">
-
-      <!-- Workflow -->
+      <details class="card" style="padding:0">
+        <summary style="cursor:pointer;padding:16px 18px;font-weight:700;font-size:13px;color:var(--navy);list-style:none">▸ History — Approval Comments &amp; Audit Trail</summary>
+        <div style="padding:0 18px 18px">
+          <!-- Approval Comments -->
+      ${approvalComments.length?`
       <div class="card">
-        <div class="form-section-header"><div class="fs-num">04</div><div class="fs-title">Approval Workflow</div></div>
-        <div class="timeline">
-          ${tlStep('📝','Permit Originator',p.originatorName,'Signed & Submitted',p.originatorSignTime,true,false)}
-          ${tlStep('🏭','Permit Acceptor',p.acceptorName,'Accepted',p.acceptorSignTime,!!p.acceptorSignTime,p.status==='Pending Acceptor')}
-          ${tlStep('🛡️','Safety In-Charge',p.safetyName,'Safety Compliance Sign-off',p.safetySignTime,!!p.safetySignTime,p.status==='Pending Safety')}
-          ${ex.dutyOfficerRequired?tlStep('⏱','Duty Officer',ex.dutyOfficerName||'','After-hours Endorsement',ex.dutyOfficerSignTime||null,!!ex.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
-          ${tlStep('▶','Job Performer','','Work Started (Sign)',p.jobStartTime,!!p.jobStartTime,p.status==='Active'&&!p.jobStartTime)}
-          ${tlStep('⏹','Job Performer','','Work Stopped (Sign)',p.jobStopTime,!!p.jobStopTime,p.status==='Active'&&!!p.jobStartTime&&!p.jobStopTime)}
-          ${p.status==='Pending Duty Officer'||p.safetySignTime?tlStep('👔','Duty Officer',p.dutyOfficerName||'—','Endorsed',p.dutyOfficerSignTime,!!p.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
-          ${tlStep('🔏','Closure','','Permit Closed',p.status==='Closed'?p.updatedAt:null,p.status==='Closed',p.status==='Pending Closure')}
-        </div>
-      </div>
+        <div class="form-section-header"><div class="fs-num">💬</div><div class="fs-title">Approval Comments</div></div>
+        ${approvalComments.map(c=>`
+          <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;border-left:3px solid var(--blue)">
+            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:4px">${esc(c.action)} — ${esc(c.by)} (${esc(c.role)}) · ${fd(c.time)}</div>
+            <div style="font-size:13px;color:var(--navy-mid)">${esc(c.comments)||'<em style="color:var(--slate)">No comments added</em>'}</div>
+          </div>`).join('')}
+      </div>` : ''}
 
-      <!-- Emergency -->
-      <div class="highlight-card hc-red" style="padding:14px 16px">
-        <div style="font-weight:800;color:#7f1d1d;font-size:15px;margin-bottom:4px">🚨 Emergency Contacts</div>
-        <div style="font-size:14px;color:#7f1d1d">HLL: <strong>555</strong> (Fire / Medical)</div>
-        ${ex.contractorEmergency?`<div style="font-size:13px;color:#7f1d1d;margin-top:4px">Contractor: <strong>${esc(ex.contractorEmergency)}</strong></div>`:''}
-      </div>
-
-      <!-- Competency & Medical -->
+      <!-- Audit Trail -->
       <div class="card">
-        <div class="form-section-header"><div class="fs-num">ℹ️</div><div class="fs-title">Competency & Medical</div></div>
-        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px">
-          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
-            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Competent Party</div>
-            <div>${ex.competentPartyRequired||'No'}${ex.competentPartyCert?' — '+esc(ex.competentPartyCert):''}</div>
-          </div>
-          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
-            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Medical Certificate (Height)</div>
-            <div>${ex.medicalCertRequired||'NA'}${ex.medicalCertDetails?' — '+esc(ex.medicalCertDetails):''}</div>
-          </div>
-        </div>
+        <div class="form-section-header"><div class="fs-num">📋</div><div class="fs-title">Audit Trail</div></div>
+        ${auditTable(log, sigMap)}
+
+        <!-- Worker Scans -->
+        ${scans.length?`<div style="margin-top:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Worker QR Sign Records</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <tr style="background:#f8fafc">
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Name</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Company</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Cert No.</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Action</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Date & Time</th>
+            </tr>
+            ${scans.map(s=>`<tr>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(s.workerName||'')}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${esc(s.contractor||'')}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px">${esc(s.certNo||'')}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0"><span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${s.scanType==='Acknowledgement'?'#dcfce7':s.scanType==='Start'?'#eff6ff':s.scanType==='Stop'?'#fef3c7':'#f3e8ff'};color:${s.scanType==='Acknowledgement'?'#14532d':s.scanType==='Start'?'#1e40af':s.scanType==='Stop'?'#92400e':'#6b21a8'}">${esc(s.scanType||'')}</span></td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${fmtDT(s.time)}</td>
+            </tr>`).join('')}
+          </table>
+        </div>`:''}
+
       </div>
 
-    </div>
+      
+        </div>
+      </details>
+
   </div>`;
 }
 
@@ -4831,7 +4522,7 @@ function openInductionModal() {
     if (_activeEntry) {
       const ae = _workEntries.find(e=>e.id===_activeEntry);
       if (ae) {
-        target.textContent = ae.dateLabel+' · '+ae.from+'–'+ae.to+' ('+ae.shifts.map(s=>s.label).join(', ')+')';
+        target.textContent = ae.dateLabel+' · '+ae.from+'–'+ae.to+(ae.shift?' ('+ae.shift+')':'');
         if (selAllWrap) selAllWrap.style.display = 'flex';
       }
     } else {
@@ -5791,6 +5482,36 @@ function findShiftSig(sigs, role, signTime) {
     if (diff < bestDiff && diff < 15000) { bestDiff = diff; best = s; }
   });
   return (best && best.hasSignature) ? best : null;
+}
+
+
+function renderQuickStatus(p, ex) {
+  const shifts = ex.shifts || [];
+  if (!shifts.length) return '';
+  const cur = shifts.find(function(s){return s.shiftId===ex.currentShiftId;}) || shifts[shifts.length-1];
+  const idx = shifts.indexOf(cur);
+  const total = shifts.length;
+
+  const NEXT_MSG = {
+    'Pending Worker Acknowledgement': '✍ Awaiting worker QR acknowledgement',
+    'Pending Acceptor': '⏳ Awaiting Permit Acceptor approval',
+    'Pending Safety': '⏳ Awaiting Safety In-Charge approval',
+    'Pending Duty Officer': '⏳ Awaiting Duty Officer endorsement',
+    'Active': cur.jobStartTime ? '▶ Work in progress' : '▶ Ready — awaiting Work Start',
+    'Completed': '✅ Shift completed'
+  };
+  const msg = NEXT_MSG[cur.shiftStatus] || cur.shiftStatus || '';
+  const bg = cur.shiftStatus==='Active' ? '#dbeafe' : cur.shiftStatus==='Completed' ? '#dcfce7' : '#fef3c7';
+  const cl = cur.shiftStatus==='Active' ? '#1d4ed8' : cur.shiftStatus==='Completed' ? '#14532d' : '#92400e';
+  const dateLabel = fmtShiftDate(cur.date, idx+1);
+
+  return '<div class="card" style="background:'+bg+';border:1px solid '+cl+'33;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:0">'
+    + '<div>'
+      + '<div style="font-size:11px;font-weight:700;color:'+cl+';text-transform:uppercase;letter-spacing:.4px">Current Activity — Shift '+(idx+1)+' of '+total+'</div>'
+      + '<div style="font-size:15px;font-weight:800;color:'+cl+';margin-top:2px">'+esc(dateLabel)+' &nbsp;&middot;&nbsp; '+esc(cur.shift||'')+'</div>'
+    + '</div>'
+    + '<div style="font-size:13px;font-weight:700;color:'+cl+'">'+msg+'</div>'
+  + '</div>';
 }
 
 function renderShiftsTimeline(shifts, ex, sigs) {
