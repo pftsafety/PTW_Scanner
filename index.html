@@ -1441,6 +1441,7 @@ tbody tr:last-child td { border-bottom:none; }
       <button class="modal-close" onclick="closeGasModal()">✕</button>
     </div>
     <input type="hidden" id="gm-permit-no">
+    <input type="hidden" id="gm-shift-id">
     <div class="grid-3" style="margin-top:6px">
       <div class="fg"><label>O₂ Level (%)</label><input type="number" id="gm-o2" step="0.1" min="0" max="100" placeholder="19.5–23.5"></div>
       <div class="fg"><label>HC Level (%)</label><input type="number" id="gm-hc" step="0.01" min="0" placeholder="Below LEL"></div>
@@ -3601,7 +3602,7 @@ function buildView(el, p, log, tests, scans, sigs) {
   // Originator can edit before Acceptor approves
   // Edit button shown above (strict originator check)
   if (['Active','Pending Safety','Pending Duty Officer','Pending Acceptor'].includes(p.status))
-    acts+=`<button class="btn btn-ghost btn-sm" onclick="openGasModal('${p.permitNo}')">🧪 Gas Test</button>`;
+    acts+=`<button class="btn btn-ghost btn-sm" onclick="openGasModal('${p.permitNo}','${ex.currentShiftId||''}')">🧪 Gas Test</button>`;
   // Originator can add new work shift on active permit
   if (p.status==='Active' && isOrig)
     acts+=`<button class="btn btn-ghost btn-sm" onclick="openAddShiftModal('${p.permitNo}')">➕ Add Shift</button>`;
@@ -3631,14 +3632,15 @@ function buildView(el, p, log, tests, scans, sigs) {
   } else {
     tbt=rawTbt;
   }
-  const tbtHtml=TBT.map(item=>{
+  const tbtHtml='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px">'+TBT.map(item=>{
     const val=tbt[item.k]||'No';
     const col=val==='Yes'?'var(--green)':val==='NA'?'var(--slate)':'var(--red)';
-    return `<div style="display:flex;justify-content:space-between;padding:6px 10px;font-size:12.5px;background:var(--bg);border-radius:4px;margin-bottom:4px">
-      <span>(<strong>${item.k}</strong>) ${item.l}</span>
-      <span style="font-weight:700;color:${col}">${val}</span>
+    const bg =val==='Yes'?'#f0fdf4':val==='NA'?'var(--bg)':'#fef2f2';
+    return `<div style="background:${bg};border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.35">
+      <div style="color:var(--slate);font-size:10.5px">(${item.k}) ${item.l}</div>
+      <div style="font-weight:700;color:${col};margin-top:2px">${val}</div>
     </div>`;
-  }).join('');
+  }).join('')+'</div>';
 
   // Workers — built from workEntries to include per-worker QR ack status
   const _workEntryWorkers = (ex.workEntries||[]).flatMap(e =>
@@ -3674,33 +3676,17 @@ function buildView(el, p, log, tests, scans, sigs) {
   ${expAlert}
 
   
-  <!-- Single-column layout (shift-wise model — see redesign) -->
-  <div style="display:flex;flex-direction:column;gap:14px">
-
-    <!-- Emergency -->
-      <div class="highlight-card hc-red" style="padding:14px 16px">
-        <div style="font-weight:800;color:#7f1d1d;font-size:15px;margin-bottom:4px">🚨 Emergency Contacts</div>
-        <div style="font-size:14px;color:#7f1d1d">HLL: <strong>555</strong> (Fire / Medical)</div>
-        ${ex.contractorEmergency?`<div style="font-size:13px;color:#7f1d1d;margin-top:4px">Contractor: <strong>${esc(ex.contractorEmergency)}</strong></div>`:''}
-      </div>
-
-      <!-- Quick Status -->
+  <!-- Quick Status -->
+  <!-- Quick Status -->
       ${renderQuickStatus(p, ex)}
 
-      <!-- Shift-wise Approval & Activity Record — Section 07 -->
-      ${(ex.shifts||[]).length ? `
-      <div class="card" id="shifts-section" style="border-top:3px solid var(--blue)">
-        <div class="form-section-header">
-          <div class="fs-num">07</div>
-          <div class="fs-title">Shift-wise Approval &amp; Activity Record</div>
-        </div>
-        ${renderShiftsTimeline(ex.shifts, ex, sigs)}
-      </div>` : ''}
+      
 
-      <details class="card" style="padding:0">
-        <summary style="cursor:pointer;padding:16px 18px;font-weight:700;font-size:13px;color:var(--navy);list-style:none">▸ Permit Details — Work Info, Hazards, PPE, Gas Tests &amp; Tool Box Talk</summary>
-        <div style="padding:0 18px 18px">
-          <!-- Work Details -->
+  <div class="layout-split">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Work Details -->
       <div class="card">
         <div class="form-section-header"><div class="fs-num">01</div><div class="fs-title">Work Details</div></div>
         <dl style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:13px">
@@ -3798,7 +3784,7 @@ function buildView(el, p, log, tests, scans, sigs) {
       <div class="card">
         <div class="form-section-header">
           <div class="fs-num">05</div><div class="fs-title">Gas Test Records</div>
-          ${['Active','Pending Safety','Pending Duty Officer'].includes(p.status)?`<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="openGasModal('${p.permitNo}')">🧪 Add Reading</button>`:''}
+          ${['Active','Pending Safety','Pending Duty Officer'].includes(p.status)?`<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="openGasModal('${p.permitNo}','${ex.currentShiftId||''}')">🧪 Add Reading</button>`:''}
         </div>
         ${gasTable(tests)}
       </div>
@@ -3810,22 +3796,58 @@ function buildView(el, p, log, tests, scans, sigs) {
         ${tbt.notes?`<div style="margin-top:8px;font-size:12px;color:var(--slate)"><strong>Notes:</strong> ${esc(tbt.notes)}</div>`:''}
       </div>
 
-      <!-- Competency & Medical -->
+      <!-- Shift-wise Approval & Activity Record — Section 07 -->
+      ${(ex.shifts||[]).length ? `
+      <div class="card" id="shifts-section" style="border-top:3px solid var(--blue)">
+        <div class="form-section-header">
+          <div class="fs-num">07</div>
+          <div class="fs-title">Shift-wise Approval &amp; Activity Record</div>
+        </div>
+        ${renderShiftsTimeline(ex.shifts, ex, sigs, tests, p.permitNo)}
+      </div>` : ''}
+
+      
+
+      <!-- Approval Comments -->
+      ${approvalComments.length?`
       <div class="card">
-        <div class="form-section-header"><div class="fs-num">ℹ️</div><div class="fs-title">Competency & Medical</div></div>
-        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px">
-          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
-            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Competent Party</div>
-            <div>${ex.competentPartyRequired||'No'}${ex.competentPartyCert?' — '+esc(ex.competentPartyCert):''}</div>
-          </div>
-          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
-            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Medical Certificate (Height)</div>
-            <div>${ex.medicalCertRequired||'NA'}${ex.medicalCertDetails?' — '+esc(ex.medicalCertDetails):''}</div>
-          </div>
-        </div>
+        <div class="form-section-header"><div class="fs-num">💬</div><div class="fs-title">Approval Comments</div></div>
+        ${approvalComments.map(c=>`
+          <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;border-left:3px solid var(--blue)">
+            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:4px">${esc(c.action)} — ${esc(c.by)} (${esc(c.role)}) · ${fd(c.time)}</div>
+            <div style="font-size:13px;color:var(--navy-mid)">${esc(c.comments)||'<em style="color:var(--slate)">No comments added</em>'}</div>
+          </div>`).join('')}
+      </div>` : ''}
+
+      <!-- Audit Trail -->
+      <div class="card">
+        <div class="form-section-header"><div class="fs-num">📋</div><div class="fs-title">Audit Trail</div></div>
+        ${auditTable(log, sigMap)}
+
+        <!-- Worker Scans -->
+        ${scans.length?`<div style="margin-top:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Worker QR Sign Records</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <tr style="background:#f8fafc">
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Name</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Company</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Cert No.</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Action</th>
+              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Date & Time</th>
+            </tr>
+            ${scans.map(s=>`<tr>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(s.workerName||'')}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${esc(s.contractor||'')}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px">${esc(s.certNo||'')}</td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0"><span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${s.scanType==='Acknowledgement'?'#dcfce7':s.scanType==='Start'?'#eff6ff':s.scanType==='Stop'?'#fef3c7':'#f3e8ff'};color:${s.scanType==='Acknowledgement'?'#14532d':s.scanType==='Start'?'#1e40af':s.scanType==='Stop'?'#92400e':'#6b21a8'}">${esc(s.scanType||'')}</span></td>
+              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${fmtDT(s.time)}</td>
+            </tr>`).join('')}
+          </table>
+        </div>`:''}
+
       </div>
-        </div>
-      </details>
+
+      
 
       <!-- SECTION 8: Closure Panel (shown when Close Permit is clicked) -->
       <div id="sec8-closure-panel" style="display:none;border:2px solid var(--green);border-radius:var(--radius);overflow:hidden;margin-top:2px">
@@ -3879,52 +3901,51 @@ function buildView(el, p, log, tests, scans, sigs) {
         </div>
       </div>
 
-      <details class="card" style="padding:0">
-        <summary style="cursor:pointer;padding:16px 18px;font-weight:700;font-size:13px;color:var(--navy);list-style:none">▸ History — Approval Comments &amp; Audit Trail</summary>
-        <div style="padding:0 18px 18px">
-          <!-- Approval Comments -->
-      ${approvalComments.length?`
+      
+
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Workflow -->
       <div class="card">
-        <div class="form-section-header"><div class="fs-num">💬</div><div class="fs-title">Approval Comments</div></div>
-        ${approvalComments.map(c=>`
-          <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:8px;border-left:3px solid var(--blue)">
-            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:4px">${esc(c.action)} — ${esc(c.by)} (${esc(c.role)}) · ${fd(c.time)}</div>
-            <div style="font-size:13px;color:var(--navy-mid)">${esc(c.comments)||'<em style="color:var(--slate)">No comments added</em>'}</div>
-          </div>`).join('')}
-      </div>` : ''}
-
-      <!-- Audit Trail -->
-      <div class="card">
-        <div class="form-section-header"><div class="fs-num">📋</div><div class="fs-title">Audit Trail</div></div>
-        ${auditTable(log, sigMap)}
-
-        <!-- Worker Scans -->
-        ${scans.length?`<div style="margin-top:12px">
-          <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Worker QR Sign Records</div>
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr style="background:#f8fafc">
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Name</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Company</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Cert No.</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Action</th>
-              <th style="padding:6px 8px;border:1px solid #e2e8f0;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.3px">Date & Time</th>
-            </tr>
-            ${scans.map(s=>`<tr>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(s.workerName||'')}</td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${esc(s.contractor||'')}</td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px">${esc(s.certNo||'')}</td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0"><span style="padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${s.scanType==='Acknowledgement'?'#dcfce7':s.scanType==='Start'?'#eff6ff':s.scanType==='Stop'?'#fef3c7':'#f3e8ff'};color:${s.scanType==='Acknowledgement'?'#14532d':s.scanType==='Start'?'#1e40af':s.scanType==='Stop'?'#92400e':'#6b21a8'}">${esc(s.scanType||'')}</span></td>
-              <td style="padding:5px 8px;border:1px solid #e2e8f0;font-size:11px;color:var(--slate)">${fmtDT(s.time)}</td>
-            </tr>`).join('')}
-          </table>
-        </div>`:''}
-
+        <div class="form-section-header"><div class="fs-num">04</div><div class="fs-title">Approval Workflow</div></div>
+        <div class="timeline">
+          ${tlStep('📝','Permit Originator',p.originatorName,'Signed & Submitted',p.originatorSignTime,true,false)}
+          ${tlStep('🏭','Permit Acceptor',p.acceptorName,'Accepted',p.acceptorSignTime,!!p.acceptorSignTime,p.status==='Pending Acceptor')}
+          ${tlStep('🛡️','Safety In-Charge',p.safetyName,'Safety Compliance Sign-off',p.safetySignTime,!!p.safetySignTime,p.status==='Pending Safety')}
+          ${ex.dutyOfficerRequired?tlStep('⏱','Duty Officer',ex.dutyOfficerName||'','After-hours Endorsement',ex.dutyOfficerSignTime||null,!!ex.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
+          ${tlStep('▶','Job Performer','','Work Started (Sign)',p.jobStartTime,!!p.jobStartTime,p.status==='Active'&&!p.jobStartTime)}
+          ${tlStep('⏹','Job Performer','','Work Stopped (Sign)',p.jobStopTime,!!p.jobStopTime,p.status==='Active'&&!!p.jobStartTime&&!p.jobStopTime)}
+          ${p.status==='Pending Duty Officer'||p.safetySignTime?tlStep('👔','Duty Officer',p.dutyOfficerName||'—','Endorsed',p.dutyOfficerSignTime,!!p.dutyOfficerSignTime,p.status==='Pending Duty Officer'):''}
+          ${tlStep('🔏','Closure','','Permit Closed',p.status==='Closed'?p.updatedAt:null,p.status==='Closed',p.status==='Pending Closure')}
+        </div>
       </div>
 
-      
-        </div>
-      </details>
+<!-- Emergency -->
+      ${ex.contractorEmergency?`
+      <div class="highlight-card hc-red" style="padding:14px 16px">
+        <div style="font-weight:800;color:#7f1d1d;font-size:15px;margin-bottom:4px">🚨 Emergency Contact</div>
+        <div style="font-size:13px;color:#7f1d1d">Contractor: <strong>${esc(ex.contractorEmergency)}</strong></div>
+      </div>` : ''}
 
+      <!-- Competency & Medical -->
+      <div class="card">
+        <div class="form-section-header"><div class="fs-num">ℹ️</div><div class="fs-title">Competency & Medical</div></div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px">
+          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Competent Party</div>
+            <div>${ex.competentPartyRequired||'No'}${ex.competentPartyCert?' — '+esc(ex.competentPartyCert):''}</div>
+          </div>
+          <div style="padding:8px 10px;background:var(--bg);border-radius:var(--radius-sm)">
+            <div style="font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px">Medical Certificate (Height)</div>
+            <div>${ex.medicalCertRequired||'NA'}${ex.medicalCertDetails?' — '+esc(ex.medicalCertDetails):''}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>`;
 }
 
@@ -4033,8 +4054,9 @@ function auditTable(l, sigMap) {
 }
 
 // Gas Test Modal
-function openGasModal(permitNo) {
+function openGasModal(permitNo, shiftId) {
   document.getElementById('gm-permit-no').value=permitNo;
+  const sid = document.getElementById('gm-shift-id'); if (sid) sid.value = shiftId||'';
   ['gm-o2','gm-hc','gm-tx'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   document.getElementById('gas-modal').classList.add('open');
 }
@@ -4042,7 +4064,7 @@ function openGasModal(permitNo) {
 async function submitGasReading() {
   const no=v('gm-permit-no'), o2=parseFloat(v('gm-o2'));
   if (isNaN(o2)) { toast('Please enter O₂ level','err'); return; }
-  const data={ permitNo:no, day:'Day '+new Date().toLocaleDateString('en-IN'), o2, hc:parseFloat(v('gm-hc'))||0, toxic:parseFloat(v('gm-tx'))||0 };
+  const data={ permitNo:no, day:'Day '+new Date().toLocaleDateString('en-IN'), o2, hc:parseFloat(v('gm-hc'))||0, toxic:parseFloat(v('gm-tx'))||0, shiftId:v('gm-shift-id')||'' };
   load(true);
   try {
     await api('addGasTest',data);
@@ -5352,49 +5374,7 @@ ${(ex.dailyEntries&&ex.dailyEntries.length)?`
 </table>
 
 </div>
-<!-- ══ ADMIN SETTINGS PANEL ══ -->
-<div id="admin-settings-panel" style="display:none">
-  <div class="ph">
-    <div><div class="ph-title">System Settings</div><div class="ph-sub">Configure permit rules and upload requirements</div></div>
-  </div>
-  <div class="card" style="padding:22px 24px;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px">Permit Limits</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div>
-        <div style="font-size:14px;font-weight:600;color:var(--navy)">Max Active/Pending Permits per Originator</div>
-        <div style="font-size:11px;color:var(--slate);margin-top:2px">Originator cannot create new permits once this limit is reached</div>
-      </div>
-      <input type="number" id="s-max-pending" min="1" max="20" value="5"
-        style="width:70px;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:center;outline:none"
-        onchange="saveSettings()">
-    </div>
-    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px;border-bottom:1px solid var(--border);padding-bottom:8px">File Uploads</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-supp-enabled" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-supp-required" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk Record Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-tbt-enabled" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
-      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
-      <label class="tog-wrap"><input type="checkbox" id="s-tbt-required" onchange="saveSettings()"><span class="tog"></span></label>
-    </div>
-    <div id="settings-save-note" style="display:none;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:600;color:#166534;margin-top:10px">✅ Settings saved</div>
-  </div>
-  <div class="card" style="padding:16px 24px;background:#fffbeb;border-color:#fde68a">
-    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px">⏱ Daily Permit Expiry Check</div>
-    <div style="font-size:11px;color:#78350f;line-height:1.6">
-      Permits expire at <strong>22:00 on the last valid day</strong> (issue date + duration, max 7 days).
-      Run <code>setupDailyTrigger()</code> once from the Apps Script editor to auto-mark expired permits as <em>Pending Closure</em> every night at 00:05.
-    </div>
-  </div>
-</div>
+
 
 </body>
 </html>`;
@@ -5514,9 +5494,10 @@ function renderQuickStatus(p, ex) {
   + '</div>';
 }
 
-function renderShiftsTimeline(shifts, ex, sigs) {
+function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
   if (!shifts||!shifts.length) return '';
   sigs = sigs || [];
+  gasTests = gasTests || [];
 
   const shiftRows = shifts.map(function(sh, si) {
     const done   = sh.shiftStatus==='Completed';
@@ -5580,6 +5561,34 @@ function renderShiftsTimeline(shifts, ex, sigs) {
           +'</tr></thead>'
           +'<tbody>'+workerRows+'</tbody>'
         +'</table>'
+        +(function(){
+          var shiftGas = gasTests.filter(function(g){ return g.shiftId===sh.shiftId; });
+          var gasRows = shiftGas.map(function(g){
+            var o2ok = g.o2>=19.5 && g.o2<=23.5;
+            return '<tr>'
+              +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:700;color:'+(o2ok?'#14532d':'#991b1b')+'">'+(g.o2!==''&&g.o2!==undefined?g.o2:'—')+'</td>'
+              +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+(g.hc!==''&&g.hc!==undefined?g.hc:'—')+'</td>'
+              +'<td style="padding:4px 8px;border:1px solid #e2e8f0">'+(g.toxic!==''&&g.toxic!==undefined?g.toxic:'—')+'</td>'
+              +'<td style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">'+esc(g.by||'—')+'</td>'
+              +'<td style="padding:4px 8px;border:1px solid #e2e8f0;font-size:10px;color:#64748b">'+fd(g.time)+'</td>'
+            +'</tr>';
+          }).join('');
+          return '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed #e2e8f0">'
+            +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">'
+              +'<span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">🧪 Gas Test Readings ('+shiftGas.length+')</span>'
+              +'<button type="button" class="btn btn-ghost btn-xs" onclick="openGasModal(\''+permitNo+'\',\''+sh.shiftId+'\')">+ Add Reading</button>'
+            +'</div>'
+            +(shiftGas.length
+              ? '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#f8fafc">'
+                +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">O₂ %</th>'
+                +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">HC %</th>'
+                +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">Toxic ppm</th>'
+                +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b;text-align:left">Tested By</th>'
+                +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b;text-align:left">Time</th>'
+                +'</tr></thead><tbody>'+gasRows+'</tbody></table>'
+              : '<div style="font-size:11px;color:#94a3b8;padding:6px 0">No gas test recorded for this shift yet.</div>')
+          +'</div>';
+        })()
       +'</div>'
     +'</div>';
   });
@@ -5800,6 +5809,51 @@ async function saveSettings() {
 
 
 </script>
+
+<!-- ══ ADMIN SETTINGS PANEL ══ -->
+<div id="admin-settings-panel" style="display:none">
+  <div class="ph">
+    <div><div class="ph-title">System Settings</div><div class="ph-sub">Configure permit rules and upload requirements</div></div>
+  </div>
+  <div class="card" style="padding:22px 24px;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px">Permit Limits</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--navy)">Max Active/Pending Permits per Originator</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:2px">Originator cannot create new permits once this limit is reached</div>
+      </div>
+      <input type="number" id="s-max-pending" min="1" max="20" value="5"
+        style="width:70px;padding:7px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;text-align:center;outline:none"
+        onchange="saveSettings()">
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 10px;border-bottom:1px solid var(--border);padding-bottom:8px">File Uploads</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-supp-enabled" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Supporting Permit — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-supp-required" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk Record Upload</div><div style="font-size:11px;color:var(--slate)">Show file upload field in new permit form</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-tbt-enabled" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+      <div><div style="font-size:14px;font-weight:600;color:var(--navy)">Tool Box Talk — Mandatory</div><div style="font-size:11px;color:var(--slate)">Block submission if not uploaded</div></div>
+      <label class="tog-wrap"><input type="checkbox" id="s-tbt-required" onchange="saveSettings()"><span class="tog"></span></label>
+    </div>
+    <div id="settings-save-note" style="display:none;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;font-weight:600;color:#166534;margin-top:10px">✅ Settings saved</div>
+  </div>
+  <div class="card" style="padding:16px 24px;background:#fffbeb;border-color:#fde68a">
+    <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:4px">⏱ Daily Permit Expiry Check</div>
+    <div style="font-size:11px;color:#78350f;line-height:1.6">
+      Permits expire at <strong>22:00 on the last valid day</strong> (issue date + duration, max 7 days).
+      Run <code>setupDailyTrigger()</code> once from the Apps Script editor to auto-mark expired permits as <em>Pending Closure</em> every night at 00:05.
+    </div>
+  </div>
+</div>
+
 
 </body>
 </html>
