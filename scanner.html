@@ -586,6 +586,48 @@ function selectPermit(p) {
 }
 
 // ── Worker list ────────────────────────────────────────────
+function renderScannerPermitDetails(p, ex) {
+  var hazards = ex.hazards || [];
+  var ppe     = ex.ppeControls || [];
+  var shifts  = ex.shifts || [];
+
+  var hazardsHtml = hazards.length
+    ? hazards.map(function(h){ return '<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:99px;font-size:11px;color:#fca5a5">⚠ '+esc(h)+'</span>'; }).join('')
+    : '<span style="font-size:11px;color:rgba(255,255,255,.4)">None recorded</span>';
+
+  var ppeHtml = ppe.length
+    ? ppe.map(function(x){ return '<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 9px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:99px;font-size:11px;color:#86efac">✓ '+esc(x)+'</span>'; }).join('')
+    : '<span style="font-size:11px;color:rgba(255,255,255,.4)">None recorded</span>';
+
+  var emergencyHtml = ex.contractorEmergency
+    ? '<div style="font-size:12px;color:#fca5a5;margin-top:4px">🚨 Contractor Emergency: <strong>'+esc(ex.contractorEmergency)+'</strong></div>'
+    : '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">No contractor emergency contact recorded</div>';
+
+  var shiftWorkersHtml = shifts.map(function(sh, si){
+    var rows = (sh.workers||[]).map(function(w){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)">'
+        + '<span style="font-size:12px;color:rgba(255,255,255,.8)">'+esc(w.name||'—')+'</span>'
+        + '<span style="font-size:11px;'+(w.acked?'color:#86efac':'color:rgba(255,255,255,.35)')+'">'+(w.acked?'✓ Acked':'Pending')+'</span>'
+        + '</div>';
+    }).join('') || '<div style="font-size:11px;color:rgba(255,255,255,.4);padding:4px 0">No workers</div>';
+    return '<div style="margin-top:8px">'
+      + '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase">Shift '+(sh.shiftNo||si+1)+' — '+esc(sh.date||'')+' '+esc(sh.shift||'')+'</div>'
+      + rows
+      + '</div>';
+  }).join('') || '<div style="font-size:11px;color:rgba(255,255,255,.4)">No shift data</div>';
+
+  return '<details style="margin-top:10px">'
+    + '<summary style="cursor:pointer;font-size:12px;font-weight:700;color:rgba(255,255,255,.6);list-style:none">▸ Hazards, PPE, Emergency &amp; Shift Workers</summary>'
+    + '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)">'
+      + '<div class="info-label">Hazards Identified</div><div style="margin-top:3px">'+hazardsHtml+'</div>'
+      + '<div class="info-label" style="margin-top:8px">PPE / Controls</div><div style="margin-top:3px">'+ppeHtml+'</div>'
+      + emergencyHtml
+      + '<div class="info-label" style="margin-top:8px">Shift-wise Workers</div>'
+      + shiftWorkersHtml
+    + '</div>'
+    + '</details>';
+}
+
 function renderStep2() {
   const p = _permit; if(!p) return;
   const ex = p.extras || {};
@@ -614,7 +656,8 @@ function renderStep2() {
       <div style="font-size:13px;font-weight:700;color:var(--blue-ll)">Shift ${currentShift.shiftNo||'1'} · ${esc(currentShift.date||'')} ${esc(currentShift.shift||'')}</div>
       <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">${(currentShift.workerAckCount||0)}/${(currentShift.workerAckTotal||0)} workers acked · ${esc(currentShift.shiftStatus||'')}</div>
     </div>` : ''}
-    ${p.jobDescription?`<div style="margin-top:6px"><div class="info-label">Job Description</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:1px;line-height:1.5">${esc(p.jobDescription.slice(0,120))}${p.jobDescription.length>120?'…':''}</div></div>`:''}`;
+    ${p.jobDescription?`<div style="margin-top:6px"><div class="info-label">Job Description</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:1px;line-height:1.5">${esc(p.jobDescription.slice(0,120))}${p.jobDescription.length>120?'…':''}</div></div>`:''}
+    ${renderScannerPermitDetails(p, ex)}`;
 
   // Action chips — driven entirely by permit status
   let actions = [];
