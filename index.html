@@ -1185,6 +1185,59 @@ tbody tr:last-child td { border-bottom:none; }
     </div>
   </div>
 </div>
+<!-- ══ ADD USER MODAL ══ -->
+<div id="add-user-modal" class="modal-bg">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">➕ Add User</div>
+      <button class="modal-close" onclick="document.getElementById('add-user-modal').classList.remove('open')">✕</button>
+    </div>
+    <div id="au-err" class="auth-alert err" style="display:none;margin-bottom:10px"><span>⚠️</span><span id="au-err-txt"></span></div>
+    <div class="fg"><label>Full Name</label><input type="text" id="au-name" placeholder="e.g. Gokul V Babu"></div>
+    <div class="fg"><label>Email</label><input type="text" id="au-email" placeholder="name@hll.co.in"></div>
+    <div class="grid-2">
+      <div class="fg"><label>Role</label>
+        <div style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;display:flex;flex-direction:column;gap:7px" id="au-roles-wrap">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Admin" style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Admin — Full access</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Safety Officer" style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Safety Officer — Approve permits</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Safety Dept" style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Safety Dept — View only</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Duty Officer" style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Duty Officer — After-hours approval</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Originator" checked style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Originator — Raise permits</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Acceptor" style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Acceptor — Accept permits</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" class="au-role-cb" value="Job Performer" style="width:15px;height:15px;accent-color:var(--blue);cursor:pointer"> Job Performer — Site sign-off</label>
+          <div style="font-size:10px;color:var(--slate);margin-top:3px">Select one or more roles</div>
+        </div>
+      </div>
+      <div class="fg"><label>Temporary Password</label><input type="text" id="au-pw" placeholder="Leave blank for default"></div>
+    </div>
+    <div class="grid-2">
+      <div class="fg"><label>Designation</label><input type="text" id="au-desig"></div>
+      <div class="fg"><label>Department</label><input type="text" id="au-dept"></div>
+    </div>
+    <div class="fg"><label>Card No.</label><input type="text" id="au-card"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('add-user-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD ITEMS MODAL (Hazards/PPE supplementary additions) ══ -->
+<div id="add-items-modal" class="modal-bg">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="aim-title">Add Items</div>
+      <button class="modal-close" onclick="document.getElementById('add-items-modal').classList.remove('open')">✕</button>
+    </div>
+    <p data-aim-desc style="font-size:12px;color:var(--slate);margin:0 0 12px"></p>
+    <div id="aim-grid" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('add-items-modal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAddedItems()">Add Selected</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ PROFILE MODAL ══ -->
 <div id="profile-modal" class="modal-bg">
   <div class="modal-box" style="max-width:460px">
@@ -1302,8 +1355,16 @@ tbody tr:last-child td { border-bottom:none; }
 <div id="ind-modal" class="modal-bg">
   <div class="modal" style="max-width:520px;width:100%">
     <div class="modal-header">
-      <div class="modal-title">Add Worker from Induction Database</div>
+      <div>
+        <div class="modal-title">Add Worker from Induction Database</div>
+        <div id="ind-modal-target" style="font-size:11px;color:var(--slate);margin-top:2px"></div>
+      </div>
       <button class="modal-close" onclick="document.getElementById('ind-modal').classList.remove('open')">✕</button>
+    </div>
+    <div id="ind-select-all-wrap" style="display:none;align-items:center;gap:8px;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:10px;font-size:12px">
+      <input type="checkbox" id="ind-select-all-cb" style="width:15px;height:15px;cursor:pointer">
+      <label for="ind-select-all-cb" style="cursor:pointer">Select all remaining workers for this entry</label>
+      <span id="ind-added-count" style="margin-left:auto;color:var(--slate);font-size:11px"></span>
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:8px;margin-bottom:12px">
@@ -1407,11 +1468,15 @@ tbody tr:last-child td { border-bottom:none; }
         <button id="sig-btn-approve" class="btn btn-green" style="flex:1" onclick="setSigAction('approve')">✅ Approve</button>
         <button id="sig-btn-reject" class="btn btn-ghost" style="flex:1;color:var(--red)" onclick="setSigAction('reject')">✕ Reject</button>
       </div>
+      <div id="sig-afterhours-note" style="display:none;padding:8px 12px;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;font-size:11px;color:#6d28d9;margin-bottom:12px">
+        ⏱ Approving after 17:15 routes this permit automatically to the Duty Officer before it becomes Active.
+      </div>
       <!-- Signature canvas -->
       <div style="margin-bottom:12px">
         <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Signature *</div>
-        <div style="border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:#fff;touch-action:none">
+        <div style="position:relative;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:#fff;touch-action:none">
           <canvas id="sig-canvas" style="display:block;width:100%;height:140px;cursor:crosshair"></canvas>
+          <div id="sig-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--slate);font-size:13px;pointer-events:none">✍ Sign here</div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:4px">
           <button class="btn btn-ghost btn-xs" onclick="clearSigCanvas()">Clear</button>
@@ -2083,6 +2148,42 @@ function filterList(scope) {
 // ══════════════════════════════════════════════════════════════
 let _workerIdx=1;
 
+let _systemSettings = null;
+
+async function loadSystemSettingsForForm() {
+  try { _systemSettings = await api('getSettings'); }
+  catch(e) { _systemSettings = null; }
+  applyUploadSettingsToForm();
+}
+
+function applyUploadSettingsToForm() {
+  const s = _systemSettings;
+  const section = document.getElementById('uploads-section');
+  const suppRow = document.getElementById('supp-permit-upload-row');
+  const tbtRow  = document.getElementById('tbt-upload-row');
+  if (!s) { if (section) section.style.display = 'none'; return; }
+
+  const showSupp = !!s.suppPermitUploadEnabled;
+  const showTbt  = !!s.tbtUploadEnabled;
+  if (suppRow) suppRow.style.display = showSupp ? 'block' : 'none';
+  if (tbtRow)  tbtRow.style.display  = showTbt  ? 'block' : 'none';
+  if (section) section.style.display = (showSupp || showTbt) ? 'block' : 'none';
+
+  const suppMark = document.getElementById('supp-required-mark');
+  if (suppMark) suppMark.textContent = s.suppPermitUploadRequired ? '*' : '(optional)';
+  const tbtMark = document.getElementById('tbt-required-mark');
+  if (tbtMark) tbtMark.textContent = s.tbtUploadRequired ? '*' : '(optional)';
+}
+
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function() { resolve(reader.result.split(',')[1]); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 async function renderForm() {
   _workerIdx=1;
   const el=document.getElementById('pg-new-permit');
@@ -2707,6 +2808,26 @@ async function renderForm() {
     </div>
   </div>
 
+  <!-- Required Uploads (controlled by Admin Settings) -->
+  <div id="uploads-section" class="ptw-section" style="display:none;margin-bottom:12px">
+    <div class="ptw-sec-head">
+      <div class="ptw-sec-num">📎</div>
+      <div class="ptw-sec-title">Required Uploads</div>
+    </div>
+    <div class="ptw-sec-body">
+      <div id="supp-permit-upload-row" style="display:none;margin-bottom:14px">
+        <label class="field-label">Supporting Permit Document <span id="supp-required-mark" style="color:var(--red);font-weight:700"></span></label>
+        <input type="file" id="supp-permit-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
+        <div id="supp-permit-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
+      </div>
+      <div id="tbt-upload-row" style="display:none">
+        <label class="field-label">Signed Tool Box Talk Record <span id="tbt-required-mark" style="color:var(--red);font-weight:700"></span></label>
+        <input type="file" id="tbt-record-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
+        <div id="tbt-record-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Submit -->
   <div style="margin-top:14px;padding:0 0 4px">
     <div id="form-submit-err" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:#b91c1c;margin-bottom:12px;font-weight:600"></div>
@@ -2728,8 +2849,19 @@ async function renderForm() {
     r.addEventListener('change',()=>{
       const show=r.value==='Yes';
       document.getElementById('comp-cert').style.display=show?'block':'none';
-      document.getElementById('comp-cert-placeholder').style.display=show?'none':'block';
+      document.getElementById('comp-cert-ph').style.display=show?'none':'block';
     });
+  });
+
+  loadSystemSettingsForForm();
+
+  document.getElementById('supp-permit-file')?.addEventListener('change', function(){
+    const fn = document.getElementById('supp-permit-filename');
+    if (fn) fn.textContent = this.files[0] ? '📄 '+this.files[0].name : '';
+  });
+  document.getElementById('tbt-record-file')?.addEventListener('change', function(){
+    const fn = document.getElementById('tbt-record-filename');
+    if (fn) fn.textContent = this.files[0] ? '📄 '+this.files[0].name : '';
   });
 }
 
@@ -3464,6 +3596,26 @@ function submitForm(e) {
   const errBanner=document.getElementById('form-submit-err');
   if(errBanner) errBanner.style.display='none';
 
+  // Enforce required uploads per Admin Settings
+  const suppFileEl = document.getElementById('supp-permit-file');
+  const tbtFileEl   = document.getElementById('tbt-record-file');
+  const suppFile = suppFileEl && suppFileEl.files[0] ? suppFileEl.files[0] : null;
+  const tbtFile  = tbtFileEl  && tbtFileEl.files[0]  ? tbtFileEl.files[0]  : null;
+  if (_systemSettings) {
+    if (_systemSettings.suppPermitUploadEnabled && _systemSettings.suppPermitUploadRequired && !suppFile) {
+      toast('Supporting Permit document is required before submission.','err');
+      document.getElementById('supp-permit-upload-row')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    if (_systemSettings.tbtUploadEnabled && _systemSettings.tbtUploadRequired && !tbtFile) {
+      toast('Signed Tool Box Talk record is required before submission.','err');
+      document.getElementById('tbt-upload-row')?.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+  }
+  payload.hasSuppPermitUpload = !!suppFile;
+  payload.hasTbtUpload = !!tbtFile;
+
   // Warn if any work entry requires Duty Officer
   if(anyDutyRequired()){
     const eb=document.getElementById('form-submit-err');
@@ -3493,9 +3645,19 @@ function submitForm(e) {
       const editingNo = document.getElementById('ptw-form')?.dataset?.editingPermitNo;
   if (editingNo) payload.permitNo = editingNo;
   api(editingNo ? 'updatePermit' : 'createPermit', payload)
-        .then(r => {
+        .then(async r => {
+          if (!r || !r.permitNo) { load(false); throw new Error('No permit number returned from server.'); }
+          try {
+            if (suppFile) {
+              const b64 = await fileToBase64(suppFile);
+              await api('uploadFile', { fileName:suppFile.name, mimeType:suppFile.type, base64Data:b64, permitNo:r.permitNo, fileType:'Supporting Permit' });
+            }
+            if (tbtFile) {
+              const b64 = await fileToBase64(tbtFile);
+              await api('uploadFile', { fileName:tbtFile.name, mimeType:tbtFile.type, base64Data:b64, permitNo:r.permitNo, fileType:'TBT Record' });
+            }
+          } catch(upErr) { toast('Permit created, but file upload failed: '+upErr.message,'warn'); }
           load(false);
-          if (!r || !r.permitNo) throw new Error('No permit number returned from server.');
           toast((editingNo?'Permit updated ✅':'Permit '+r.permitNo+' created ✅'),'ok');
           loadNotifications();
           setTimeout(() => nav('view-permit', r.permitNo), 600);
@@ -3539,7 +3701,7 @@ function buildView(el, p, log, tests, scans, sigs) {
   scans = scans||[]; sigs = sigs||[];
   _currentPermitView = p;                // store for openAddItemsModal
   const _roles=(CU.roles||[CU.role]);
-  const isAcc  = CU.email===p.acceptorEmail  || _roles.includes('Admin');
+  const isAcc  = CU.email===p.acceptorEmail  || _roles.includes('Admin') || _roles.includes('Acceptor');
   const isSaf  = CU.email===p.safetyEmail    || _roles.includes('Admin') || _roles.includes('Safety Officer');
   const isOrig = CU.email===p.originatorEmail|| _roles.includes('Admin');
   const ex=p.extras||{};
@@ -3593,7 +3755,7 @@ function buildView(el, p, log, tests, scans, sigs) {
   if (p.status==='Pending Closure' && isOrig)
     acts+=`<button class="btn btn-primary" onclick="doClose('${p.permitNo}')">🔏 Close Permit</button>`;
   // Cancel: Safety or Acceptor can cancel at any time (not Originator)
-  const canCancel = (_roles.includes('Safety Officer')||_roles.includes('Acceptor')||_roles.includes('Admin'))
+  const canCancel = (_roles.includes('Safety')||_roles.includes('Safety Officer')||_roles.includes('Acceptor')||_roles.includes('Admin'))
     && !['Closed','Cancelled'].includes(p.status);
   if(canCancel)
     acts+=`<button class="btn btn-ghost" onclick="doCancelPermit('${p.permitNo}')" style="color:var(--red)">🚫 Cancel</button>`;
@@ -3606,6 +3768,9 @@ function buildView(el, p, log, tests, scans, sigs) {
   // Originator can add new work shift on active permit
   if (p.status==='Active' && isOrig)
     acts+=`<button class="btn btn-ghost btn-sm" onclick="openAddShiftModal('${p.permitNo}')">➕ Add Shift</button>`;
+  // Originator can initiate closure on an Active permit (don't wait for auto-expiry)
+  if (p.status==='Active' && isOrig)
+    acts+=`<button class="btn btn-ghost btn-sm" onclick="doClose('${p.permitNo}')" style="color:var(--blue-dark)">🔏 Initiate Closure</button>`;
 
   // Expiry alert
   let expAlert='';
