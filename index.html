@@ -1783,6 +1783,7 @@ function launchApp() {
   const sbAv=document.getElementById('sb-av'); if(sbAv) sbAv.textContent=(CU.name||'?')[0].toUpperCase();
   const adminNav=document.getElementById('admin-nav-section'); if(adminNav) adminNav.style.display=(CU.roles||[CU.role]).includes('Admin')?'block':'none';
   const newPermitNav=document.getElementById('nav-new-permit'); if(newPermitNav) newPermitNav.style.display=(CU.roles||[CU.role]).some(r=>['Safety Dept','Duty Officer'].includes(r))?'none':'inline-flex';
+  const allPermitsNav=document.getElementById('nav-all-permits'); if(allPermitsNav) allPermitsNav.style.display=(CU.roles||[CU.role]).some(r=>['Admin','Safety','Safety Officer'].includes(r))?'flex':'none';
   nav('dashboard');
   // Load users immediately — needed for new permit form dropdowns
   api('getAllUsers').then(u=>{ _allUsers = Array.isArray(u)?u:[]; }).catch(()=>{});
@@ -2157,17 +2158,21 @@ async function loadSystemSettingsForForm() {
 }
 
 function applyUploadSettingsToForm() {
+  // Upload fields live inside their relevant sections (Supporting Permits / Tool Box Talk)
+  // rather than a separate standalone area — just show/hide each in place.
   const s = _systemSettings;
-  const section = document.getElementById('uploads-section');
   const suppRow = document.getElementById('supp-permit-upload-row');
   const tbtRow  = document.getElementById('tbt-upload-row');
-  if (!s) { if (section) section.style.display = 'none'; return; }
+  if (!s) {
+    if (suppRow) suppRow.style.display = 'none';
+    if (tbtRow)  tbtRow.style.display  = 'none';
+    return;
+  }
 
   const showSupp = !!s.suppPermitUploadEnabled;
   const showTbt  = !!s.tbtUploadEnabled;
   if (suppRow) suppRow.style.display = showSupp ? 'block' : 'none';
   if (tbtRow)  tbtRow.style.display  = showTbt  ? 'block' : 'none';
-  if (section) section.style.display = (showSupp || showTbt) ? 'block' : 'none';
 
   const suppMark = document.getElementById('supp-required-mark');
   if (suppMark) suppMark.textContent = s.suppPermitUploadRequired ? '*' : '(optional)';
@@ -2392,6 +2397,13 @@ async function renderForm() {
           </div>
 
         </div>
+
+        <!-- Supporting Permit Document Upload (shown/required per Admin Settings) -->
+        <div id="supp-permit-upload-row" style="display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--border)">
+          <label class="field-label">Upload Supporting Permit Document <span id="supp-required-mark" style="color:var(--red);font-weight:700"></span></label>
+          <input type="file" id="supp-permit-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
+          <div id="supp-permit-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
+        </div>
       </div>
 
       <!-- Job details -->
@@ -2559,6 +2571,13 @@ async function renderForm() {
           style="flex-shrink:0;padding:7px 14px;background:#2563eb;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">
           ⬇ Download Form
         </a>
+      </div>
+
+      <!-- Signed TBT Record Upload (shown/required per Admin Settings) -->
+      <div id="tbt-upload-row" style="display:none;margin-bottom:12px">
+        <label class="field-label">Upload Signed TBT Record <span id="tbt-required-mark" style="color:var(--red);font-weight:700"></span></label>
+        <input type="file" id="tbt-record-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
+        <div id="tbt-record-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
       </div>
 
       <div id="tbt-day-indicator" style="background:#eff6ff;border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;font-weight:700;color:var(--blue-dark);margin-bottom:12px;display:flex;align-items:center;gap:8px">
@@ -2808,25 +2827,6 @@ async function renderForm() {
     </div>
   </div>
 
-  <!-- Required Uploads (controlled by Admin Settings) -->
-  <div id="uploads-section" class="ptw-section" style="display:none;margin-bottom:12px">
-    <div class="ptw-sec-head">
-      <div class="ptw-sec-num">📎</div>
-      <div class="ptw-sec-title">Required Uploads</div>
-    </div>
-    <div class="ptw-sec-body">
-      <div id="supp-permit-upload-row" style="display:none;margin-bottom:14px">
-        <label class="field-label">Supporting Permit Document <span id="supp-required-mark" style="color:var(--red);font-weight:700"></span></label>
-        <input type="file" id="supp-permit-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
-        <div id="supp-permit-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
-      </div>
-      <div id="tbt-upload-row" style="display:none">
-        <label class="field-label">Signed Tool Box Talk Record <span id="tbt-required-mark" style="color:var(--red);font-weight:700"></span></label>
-        <input type="file" id="tbt-record-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
-        <div id="tbt-record-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- Submit -->
   <div style="margin-top:14px;padding:0 0 4px">
@@ -3735,10 +3735,8 @@ function buildView(el, p, log, tests, scans, sigs) {
   if (p.status==='Pending Duty Officer'&&isDuty)
     acts+=`<button class="btn btn-green" onclick="doApprove('${p.permitNo}','Duty Officer')">Approve</button>
            <button class="btn btn-red"   onclick="doReject('${p.permitNo}','Duty Officer')">✕ Reject</button>`;
-  if (p.status==='Active'&&!p.jobStartTime)
-    acts+=`<button class="btn btn-blue" onclick="doSign('${p.permitNo}','start')">▶ Sign START</button><button class="btn btn-ghost btn-sm" onclick="openScannerPage('${p.permitNo}')" style="color:var(--green)">📷 Scan Worker</button>`;
-  if (p.status==='Active'&&p.jobStartTime&&!p.jobStopTime)
-    acts+=`<button class="btn btn-amber" onclick="doSign('${p.permitNo}','stop')">⏹ Sign STOP</button>`;
+  // Work Start/Stop signing and worker scanning happen exclusively via the Scanner app —
+  // removed the duplicate Sign START / Sign STOP / Scan Worker buttons from this page.
   // (Legacy 'Daily Entry' action buttons removed — superseded by Add Shift / shifts[])
   // ── Closure Sequence Signing ─────────────────────────────────
   // Step 1: Job Performer signs via Scanner (status set by scanner QR)
@@ -5608,10 +5606,10 @@ function fmtShiftDate(dateStr, fallbackNo) {
   try {
     var d = new Date(dateStr + (dateStr.indexOf('T')>-1?'':'T00:00:00'));
     if (isNaN(d.getTime())) return 'Shift ' + fallbackNo;
+    var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var dd = String(d.getDate()).padStart(2,'0');
-    var mm = String(d.getMonth()+1).padStart(2,'0');
     var yyyy = d.getFullYear();
-    return dd+'.'+mm+'.'+yyyy;
+    return dd+'.'+MON[d.getMonth()]+'.'+yyyy;
   } catch(e) { return 'Shift ' + fallbackNo; }
 }
 
@@ -5636,6 +5634,7 @@ function renderQuickStatus(p, ex) {
   const cur = shifts.find(function(s){return s.shiftId===ex.currentShiftId;}) || shifts[shifts.length-1];
   const idx = shifts.indexOf(cur);
   const total = shifts.length;
+  const workerCount = (cur.workers||[]).length;
 
   const NEXT_MSG = {
     'Pending Worker Acknowledgement': '✍ Awaiting worker QR acknowledgement',
@@ -5653,7 +5652,8 @@ function renderQuickStatus(p, ex) {
   return '<div class="card" style="background:'+bg+';border:1px solid '+cl+'33;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:0">'
     + '<div>'
       + '<div style="font-size:11px;font-weight:700;color:'+cl+';text-transform:uppercase;letter-spacing:.4px">Current Activity — Shift '+(idx+1)+' of '+total+'</div>'
-      + '<div style="font-size:15px;font-weight:800;color:'+cl+';margin-top:2px">'+esc(dateLabel)+' &nbsp;&middot;&nbsp; '+esc(cur.shift||'')+'</div>'
+      + '<div style="font-size:15px;font-weight:800;color:'+cl+';margin-top:2px">'+esc(dateLabel)+' &nbsp;&middot;&nbsp; '+esc(cur.shift||'—')+'</div>'
+      + '<div style="font-size:12px;color:'+cl+';margin-top:2px">👥 '+workerCount+' worker'+(workerCount===1?'':'s')+'</div>'
     + '</div>'
     + '<div style="font-size:13px;font-weight:700;color:'+cl+'">'+msg+'</div>'
   + '</div>';
