@@ -1433,13 +1433,108 @@ tbody tr:last-child td { border-bottom:none; }
       <div style="font-size:11px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px">
         📋 Tool Box Talk (required)
       </div>
-      <div class="fg" style="margin-bottom:10px">
-        <label class="field-label">TBT Topic *</label>
-        <input type="text" id="shift-tbt-topic" class="field" placeholder="e.g. Hazards of working at height, PPE checks">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:10px">
+        <span style="font-size:18px">📋</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:#1e40af">Toolbox Talk Record Form</div>
+          <div style="font-size:10.5px;color:#3b82f6">Download → fill &amp; sign → upload the completed copy below</div>
+        </div>
+        <a href="./tbt-record.pdf" target="_blank" download="HLL-TBT-Record.pdf"
+          style="flex-shrink:0;padding:6px 11px;background:#2563eb;color:#fff;border-radius:7px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap">
+          ⬇ Download
+        </a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-bottom:10px" id="shift-tbt-grid">
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>a</strong>) Work procedures</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-a" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_a" value="Yes" onchange="shiftTbtHighlight('a','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-a" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_a" value="No" checked onchange="shiftTbtHighlight('a','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-a" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_a" value="NA" onchange="shiftTbtHighlight('a','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>b</strong>) Isolation and its requirements</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-b" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_b" value="Yes" onchange="shiftTbtHighlight('b','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-b" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_b" value="No" checked onchange="shiftTbtHighlight('b','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-b" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_b" value="NA" onchange="shiftTbtHighlight('b','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>c</strong>) Proper housekeeping</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-c" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_c" value="Yes" onchange="shiftTbtHighlight('c','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-c" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_c" value="No" checked onchange="shiftTbtHighlight('c','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-c" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_c" value="NA" onchange="shiftTbtHighlight('c','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>d</strong>) Related hazards and control measures</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-d" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_d" value="Yes" onchange="shiftTbtHighlight('d','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-d" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_d" value="No" checked onchange="shiftTbtHighlight('d','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-d" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_d" value="NA" onchange="shiftTbtHighlight('d','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>e</strong>) Nearest Assembly Point</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-e" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_e" value="Yes" onchange="shiftTbtHighlight('e','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-e" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_e" value="No" checked onchange="shiftTbtHighlight('e','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-e" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_e" value="NA" onchange="shiftTbtHighlight('e','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>f</strong>) Emergency Contact No.</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-f" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_f" value="Yes" onchange="shiftTbtHighlight('f','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-f" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_f" value="No" checked onchange="shiftTbtHighlight('f','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-f" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_f" value="NA" onchange="shiftTbtHighlight('f','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>g</strong>) Emergency escape route</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-g" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_g" value="Yes" onchange="shiftTbtHighlight('g','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-g" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_g" value="No" checked onchange="shiftTbtHighlight('g','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-g" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_g" value="NA" onchange="shiftTbtHighlight('g','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>h</strong>) Use of appropriate PPEs (as per §03)</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-h" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_h" value="Yes" onchange="shiftTbtHighlight('h','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-h" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_h" value="No" checked onchange="shiftTbtHighlight('h','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-h" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_h" value="NA" onchange="shiftTbtHighlight('h','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>i</strong>) Nearest Manual Call Point</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-i" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_i" value="Yes" onchange="shiftTbtHighlight('i','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-i" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_i" value="No" checked onchange="shiftTbtHighlight('i','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-i" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_i" value="NA" onchange="shiftTbtHighlight('i','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 8px">
+          <div style="font-size:11px;color:var(--navy-mid);margin-bottom:5px">(<strong>j</strong>) Others (specify)</div>
+          <div style="display:flex;gap:4px">
+            <label id="shift-tbt-lbl-yes-j" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--green);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_j" value="Yes" onchange="shiftTbtHighlight('j','Yes')" style="display:none"> Yes</label>
+            <label id="shift-tbt-lbl-no-j" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;font-weight:700;color:var(--red);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_j" value="No" checked onchange="shiftTbtHighlight('j','No')" style="display:none"> No</label>
+            <label id="shift-tbt-lbl-na-j" style="cursor:pointer;display:flex;align-items:center;gap:2px;font-size:10.5px;color:var(--slate);padding:2px 4px;border:1.5px solid #e2e8f0;border-radius:4px;flex:1;justify-content:center"><input type="radio" name="shift_tbt_j" value="NA" onchange="shiftTbtHighlight('j','NA')" style="display:none"> NA</label>
+          </div>
+        </div>
       </div>
       <div class="fg" style="margin-bottom:12px">
         <label class="field-label">Conducted By *</label>
         <input type="text" id="shift-tbt-by" class="field" placeholder="Name of person conducting the talk">
+      </div>
+
+      <div id="shift-tbt-upload-row" style="display:none;margin-bottom:12px">
+        <label class="field-label">Upload Signed TBT Record <span id="shift-tbt-required-mark" style="color:var(--red);font-weight:700"></span></label>
+        <input type="file" id="shift-tbt-record-file" accept=".pdf,.jpg,.jpeg,.png" style="display:block;margin-top:6px;font-size:13px">
+        <div id="shift-tbt-record-filename" style="font-size:11px;color:var(--slate);margin-top:4px"></div>
       </div>
 
       <div class="alert alert-info" style="font-size:12px;padding:8px 12px;margin-bottom:12px;background:#eff6ff;border-color:#bfdbfe;color:#1e40af">
@@ -5681,7 +5776,7 @@ function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
       {icon:'🛡️', label:'Safety',    done:!!sh.safetySignTime,     detail:esc(sh.safetyName||'—'),    time:sh.safetySignTime||'', sig:safetySig},
       {icon:'👔', label:'Duty Ofcr', done:!!sh.dutyOfficerSignTime, detail:sh.dutyOfficerSignTime?esc(sh.dutyOfficerName||'—'):'—', time:sh.dutyOfficerSignTime||'', sig:dutySig},
       {icon:'▶',  label:'Start',     done:!!sh.jobStartTime,  detail:sh.jobStartTime?fd(sh.jobStartTime):'',  time:'', sig:null},
-      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?fd(sh.jobStopTime):'',    time:'', sig:null},
+      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?(fd(sh.jobStopTime)+(sh.autoStoppedBySystem?' ⚙':'')):'',    time:'', sig:null},
     ];
     const stepHtml = steps.map(function(s) {
       const visual = (s.sig && s.sig.signatureData)
@@ -5715,6 +5810,7 @@ function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
       +'<div style="padding:12px 14px">'
         +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:12px">'+stepHtml+'</div>'
         +'<div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase">Workers ('+(sh.workers||[]).length+')</div>'
+        +(sh.autoStoppedBySystem ? '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-bottom:10px;font-size:11px;color:#9a3412"><span style="font-size:15px">⚙️</span><div><strong>Auto-stopped by system</strong> — Job Performer did not record Work Stop before the shift end time ('+fd(sh.autoStopTime)+').</div></div>' : '')
         +'<table style="width:100%;border-collapse:collapse;font-size:11px">'
           +'<thead><tr style="background:#f8fafc">'
             +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">#</th>'
@@ -5793,20 +5889,74 @@ async function loadSubApprovalPage() {
 
 let _shiftWorkers = [];
 
-function openAddShiftModal(permitNo) {
+function shiftTbtHighlight(key, val) {
+  ['yes','no','na'].forEach(function(v){
+    const lbl = document.getElementById('shift-tbt-lbl-'+v+'-'+key);
+    if (!lbl) return;
+    lbl.style.background=''; lbl.style.borderColor='#e2e8f0';
+  });
+  const selLbl = document.getElementById('shift-tbt-lbl-'+val.toLowerCase()+'-'+key);
+  if (selLbl) {
+    const bg  = val==='Yes'?'#dcfce7':val==='No'?'#fee2e2':'#f1f5f9';
+    const bdr = val==='Yes'?'#86efac':val==='No'?'#fca5a5':'#cbd5e1';
+    selLbl.style.background=bg; selLbl.style.borderColor=bdr;
+  }
+}
+
+function resetShiftTbtChips() {
+  TBT.forEach(function(item){
+    ['yes','no','na'].forEach(function(v){
+      const lbl = document.getElementById('shift-tbt-lbl-'+v+'-'+item.k);
+      if (lbl) { lbl.style.background=''; lbl.style.borderColor='#e2e8f0'; }
+    });
+    const noRadio = document.querySelector('input[name="shift_tbt_'+item.k+'"][value="No"]');
+    if (noRadio) noRadio.checked = true;
+  });
+}
+
+function collectShiftTbt() {
+  const data = {};
+  TBT.forEach(function(item){
+    const checked = document.querySelector('input[name="shift_tbt_'+item.k+'"]:checked');
+    data[item.k] = checked ? checked.value : 'No';
+  });
+  return data;
+}
+
+async function openAddShiftModal(permitNo) {
   _shiftWorkers = [];
   document.getElementById('shift-permit-no').value = permitNo;
   document.getElementById('shift-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('shift-shift').value = '';
   document.getElementById('shift-remarks').value = '';
-  document.getElementById('shift-tbt-topic').value = '';
   document.getElementById('shift-tbt-by').value = '';
+  resetShiftTbtChips();
+  const sf = document.getElementById('shift-tbt-record-file'); if (sf) sf.value = '';
+  const sfn = document.getElementById('shift-tbt-record-filename'); if (sfn) sfn.textContent = '';
+  if (sf && !sf._listenerAttached) {
+    sf.addEventListener('change', function(){
+      const fn = document.getElementById('shift-tbt-record-filename');
+      if (fn) fn.textContent = this.files[0] ? '📄 '+this.files[0].name : '';
+    });
+    sf._listenerAttached = true;
+  }
   document.getElementById('shift-err').style.display = 'none';
   document.getElementById('shift-worker-search').value = '';
   document.getElementById('shift-worker-results').style.display = 'none';
   document.getElementById('shift-worker-results').innerHTML = '';
   renderShiftWorkers();
   document.getElementById('shift-modal').classList.add('open');
+
+  // Apply TBT upload requirement from Admin Settings (same settings as Create Permit form)
+  if (!_systemSettings) { try { _systemSettings = await api('getSettings'); } catch(e) { _systemSettings = null; } }
+  const row = document.getElementById('shift-tbt-upload-row');
+  const mark = document.getElementById('shift-tbt-required-mark');
+  if (_systemSettings && _systemSettings.tbtUploadEnabled) {
+    if (row) row.style.display = 'block';
+    if (mark) mark.textContent = _systemSettings.tbtUploadRequired ? '*' : '(optional)';
+  } else {
+    if (row) row.style.display = 'none';
+  }
 }
 
 function renderShiftWorkers() {
@@ -5863,18 +6013,31 @@ async function saveShift() {
   const date     = document.getElementById('shift-date').value;
   const shift    = document.getElementById('shift-shift').value;
   const remarks  = document.getElementById('shift-remarks').value.trim();
-  const tbtTopic = document.getElementById('shift-tbt-topic').value.trim();
   const tbtBy    = document.getElementById('shift-tbt-by').value.trim();
+  const tbt      = collectShiftTbt();
+  const tbtFileEl = document.getElementById('shift-tbt-record-file');
+  const tbtFile   = tbtFileEl && tbtFileEl.files[0] ? tbtFileEl.files[0] : null;
   const errEl    = document.getElementById('shift-err');
   errEl.style.display='none';
   if (!date)     { errEl.textContent='Select a date.';  errEl.style.display='block'; return; }
   if (!shift)    { errEl.textContent='Select a shift.'; errEl.style.display='block'; return; }
   if (!_shiftWorkers.length) { errEl.textContent='Add at least one worker for this shift.'; errEl.style.display='block'; return; }
-  if (!tbtTopic) { errEl.textContent='Tool Box Talk topic is required before adding a shift.'; errEl.style.display='block'; return; }
   if (!tbtBy)    { errEl.textContent='Tool Box Talk — Conducted By is required.'; errEl.style.display='block'; return; }
+  if (_systemSettings && _systemSettings.tbtUploadEnabled && _systemSettings.tbtUploadRequired && !tbtFile) {
+    errEl.textContent = 'Signed Tool Box Talk record is required before adding this shift.';
+    errEl.style.display = 'block';
+    document.getElementById('shift-tbt-upload-row')?.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
   load(true,'Adding shift…');
   try {
-    await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers, tbtTopic, tbtBy });
+    const res = await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers, tbt, tbtBy });
+    if (tbtFile) {
+      try {
+        const b64 = await fileToBase64(tbtFile);
+        await api('uploadFile', { fileName:tbtFile.name, mimeType:tbtFile.type, base64Data:b64, permitNo:no, fileType:'TBT Record — '+(res.shiftId||shift) });
+      } catch(upErr) { toast('Shift added, but TBT file upload failed: '+upErr.message,'warn'); }
+    }
     load(false);
     document.getElementById('shift-modal').classList.remove('open');
     toast('Shift added — workers must acknowledge via QR Scanner ✅','ok');
