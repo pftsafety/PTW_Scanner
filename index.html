@@ -1384,13 +1384,14 @@ tbody tr:last-child td { border-bottom:none; }
   <div class="modal-box" style="max-width:520px;max-height:90vh;overflow-y:auto">
     <div class="modal-header">
       <div>
-        <div class="modal-title">➕ Add Work Shift</div>
-        <div style="font-size:11px;color:var(--slate);margin-top:2px">Workers must re-acknowledge each new shift via QR scanner</div>
+        <div class="modal-title" id="shift-modal-title">➕ Add Work Shift</div>
+        <div style="font-size:11px;color:var(--slate);margin-top:2px" id="shift-modal-sub">Workers must re-acknowledge each new shift via QR scanner</div>
       </div>
       <button class="modal-close" onclick="document.getElementById('shift-modal').classList.remove('open')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="shift-permit-no">
+      <input type="hidden" id="shift-edit-id">
 
       <!-- Shift Details -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -3864,6 +3865,16 @@ function buildView(el, p, log, tests, scans, sigs) {
   // Originator can initiate closure on an Active permit (don't wait for auto-expiry)
   if (p.status==='Active' && isOrig)
     acts+=`<button class="btn btn-ghost btn-sm" onclick="doClose('${p.permitNo}')" style="color:var(--blue-dark)">🔏 Initiate Closure</button>`;
+  // If the current shift is stuck waiting on worker acknowledgement (e.g. the shift's
+  // time window passed and nobody scanned in), Originator can cancel it and reschedule.
+  if (p.status==='Pending Worker Acknowledgement' && isOrig) {
+    const _curShift = (ex.shifts||[]).find(s=>s.shiftId===ex.currentShiftId) || (ex.shifts||[]).slice(-1)[0];
+    if (_curShift && _curShift.shiftStatus==='Pending Worker Acknowledgement') {
+      acts+=`<button class="btn btn-ghost btn-sm" onclick="cancelPendingShiftPrompt('${p.permitNo}')" style="color:var(--red)">🚫 Cancel Shift &amp; Reschedule</button>`;
+    } else if (_curShift && _curShift.shiftStatus==='Cancelled') {
+      acts+=`<button class="btn btn-ghost btn-sm" onclick="openAddShiftModal('${p.permitNo}')">➕ Add Shift</button>`;
+    }
+  }
 
   // Expiry alert
   let expAlert='';
@@ -5760,10 +5771,11 @@ function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
   gasTests = gasTests || [];
 
   const shiftRows = shifts.map(function(sh, si) {
-    const done   = sh.shiftStatus==='Completed';
-    const active = sh.shiftStatus==='Active';
-    const hBg    = done?'#dcfce7':active?'#dbeafe':'#fef3c7';
-    const hCl    = done?'#14532d':active?'#1d4ed8':'#92400e';
+    const done      = sh.shiftStatus==='Completed';
+    const active    = sh.shiftStatus==='Active';
+    const cancelled = sh.shiftStatus==='Cancelled';
+    const hBg    = cancelled?'#f1f5f9':done?'#dcfce7':active?'#dbeafe':'#fef3c7';
+    const hCl    = cancelled?'#64748b':done?'#14532d':active?'#1d4ed8':'#92400e';
 
     const acceptorSig = findShiftSig(sigs, 'Acceptor', sh.acceptorSignTime);
     const safetySig    = findShiftSig(sigs, 'Safety',   sh.safetySignTime);
@@ -5811,6 +5823,7 @@ function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
         +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:12px">'+stepHtml+'</div>'
         +'<div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase">Workers ('+(sh.workers||[]).length+')</div>'
         +(sh.autoStoppedBySystem ? '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-bottom:10px;font-size:11px;color:#9a3412"><span style="font-size:15px">⚙️</span><div><strong>Auto-stopped by system</strong> — Job Performer did not record Work Stop before the shift end time ('+fd(sh.autoStopTime)+').</div></div>' : '')
+        +(cancelled ? '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;font-size:11px;color:#475569"><span style="font-size:15px">🚫</span><div><strong>Cancelled</strong> by '+esc(sh.cancelledBy||'—')+' — '+esc(sh.cancelReason||'No reason given')+'<br><span style="opacity:.7">'+fd(sh.cancelledAt)+'</span></div></div>' : '')
         +'<table style="width:100%;border-collapse:collapse;font-size:11px">'
           +'<thead><tr style="background:#f8fafc">'
             +'<th style="padding:4px 8px;border:1px solid #e2e8f0;color:#64748b">#</th>'
@@ -5921,6 +5934,19 @@ function collectShiftTbt() {
     data[item.k] = checked ? checked.value : 'No';
   });
   return data;
+}
+
+async function cancelPendingShiftPrompt(permitNo) {
+  const reason = prompt('Reason for cancelling this shift (e.g. "Work not carried out — rescheduling"):');
+  if (reason === null) return; // user hit Cancel on the prompt
+  if (!reason.trim()) { toast('A reason is required.','err'); return; }
+  load(true,'Cancelling shift…');
+  try {
+    await api('cancelPendingShift', { permitNo, reason: reason.trim() });
+    load(false);
+    toast('Shift cancelled — add a new shift to reschedule ✅','ok');
+    setTimeout(()=>loadView(permitNo), 600);
+  } catch(e) { load(false); toast(e.message,'err'); }
 }
 
 async function openAddShiftModal(permitNo) {
