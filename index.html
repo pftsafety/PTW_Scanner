@@ -6034,7 +6034,7 @@ function addShiftWorker(r) {
   document.getElementById('shift-worker-results').style.display='none';
 }
 
-async function saveShift() {
+function saveShift() {
   const no       = document.getElementById('shift-permit-no').value;
   const date     = document.getElementById('shift-date').value;
   const shift    = document.getElementById('shift-shift').value;
@@ -6055,20 +6055,29 @@ async function saveShift() {
     document.getElementById('shift-tbt-upload-row')?.scrollIntoView({behavior:'smooth',block:'center'});
     return;
   }
-  load(true,'Adding shift…');
-  try {
-    const res = await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers, tbt, tbtBy });
-    if (tbtFile) {
+
+  // Originator must sign to authorize this new shift before it's submitted
+  openSigModal(
+    'Originator Sign-off',
+    'Authorize new shift — Permit '+no,
+    no, 'Originator',
+    async () => {
+      load(true,'Adding shift…');
       try {
-        const b64 = await fileToBase64(tbtFile);
-        await api('uploadFile', { fileName:tbtFile.name, mimeType:tbtFile.type, base64Data:b64, permitNo:no, fileType:'TBT Record — '+(res.shiftId||shift) });
-      } catch(upErr) { toast('Shift added, but TBT file upload failed: '+upErr.message,'warn'); }
+        const res = await api('addPermitShift',{ permitNo:no, date, shift, remarks, workers:_shiftWorkers, tbt, tbtBy });
+        if (tbtFile) {
+          try {
+            const b64 = await fileToBase64(tbtFile);
+            await api('uploadFile', { fileName:tbtFile.name, mimeType:tbtFile.type, base64Data:b64, permitNo:no, fileType:'TBT Record — '+(res.shiftId||shift) });
+          } catch(upErr) { toast('Shift added, but TBT file upload failed: '+upErr.message,'warn'); }
+        }
+        load(false);
+        document.getElementById('shift-modal').classList.remove('open');
+        toast('Shift added — workers must acknowledge via QR Scanner ✅','ok');
+        setTimeout(()=>loadView(no), 800);
+      } catch(e) { load(false); errEl.textContent=e.message; errEl.style.display='block'; }
     }
-    load(false);
-    document.getElementById('shift-modal').classList.remove('open');
-    toast('Shift added — workers must acknowledge via QR Scanner ✅','ok');
-    setTimeout(()=>loadView(no), 800);
-  } catch(e) { load(false); errEl.textContent=e.message; errEl.style.display='block'; }
+  );
 }
 
 function openProfile() {
