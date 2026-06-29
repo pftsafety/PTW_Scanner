@@ -3867,9 +3867,10 @@ function buildView(el, p, log, tests, scans, sigs) {
     acts+=`<button class="btn btn-ghost btn-sm" onclick="doClose('${p.permitNo}')" style="color:var(--blue-dark)">🔏 Initiate Closure</button>`;
   // If the current shift is stuck waiting on worker acknowledgement (e.g. the shift's
   // time window passed and nobody scanned in), Originator can cancel it and reschedule.
-  if (p.status==='Pending Worker Acknowledgement' && isOrig) {
+  if (['Pending Worker Acknowledgement','Pending Acceptor','Pending Safety','Pending Duty Officer'].includes(p.status) && isOrig) {
     const _curShift = (ex.shifts||[]).find(s=>s.shiftId===ex.currentShiftId) || (ex.shifts||[]).slice(-1)[0];
-    if (_curShift && _curShift.shiftStatus==='Pending Worker Acknowledgement') {
+    const _cancellableStatuses = ['Pending Worker Acknowledgement','Pending Acceptor','Pending Safety','Pending Duty Officer'];
+    if (_curShift && _cancellableStatuses.includes(_curShift.shiftStatus)) {
       acts+=`<button class="btn btn-ghost btn-sm" onclick="cancelPendingShiftPrompt('${p.permitNo}')" style="color:var(--red)">🚫 Cancel Shift &amp; Reschedule</button>`;
     } else if (_curShift && _curShift.shiftStatus==='Cancelled') {
       acts+=`<button class="btn btn-ghost btn-sm" onclick="openAddShiftModal('${p.permitNo}')">➕ Add Shift</button>`;
@@ -4091,7 +4092,7 @@ function buildView(el, p, log, tests, scans, sigs) {
       <!-- Audit Trail -->
       <div class="card">
         <div class="form-section-header"><div class="fs-num">📋</div><div class="fs-title">Audit Trail</div></div>
-        ${auditTable(log, sigMap)}
+        ${auditTable(log, sigMap, sigs)}
 
         <!-- Worker Scans -->
         ${scans.length?`<div style="margin-top:12px">
@@ -4269,9 +4270,10 @@ function gasTable(t) {
   </table></div>`;
 }
 
-function auditTable(l, sigMap) {
+function auditTable(l, sigMap, sigs) {
   if (!l || !l.length) return '<div style="color:var(--slate);font-size:13px;padding:8px 0">No activity recorded yet.</div>';
   sigMap = sigMap || {};
+  sigs = sigs || [];
 
   // Parse "Balamurugan (M (IP), Internal Projects)" → { name, desig }
   function parseND(nd) {
@@ -4282,7 +4284,7 @@ function auditTable(l, sigMap) {
 
   const SIG_ACTIONS = ['Approved','Signed','Permit Active','Signed & Submitted',
                        'Safety Approved','Acceptor Approved','Duty Officer Approved',
-                       'Work Started','Work Stopped'];
+                       'Work Started','Work Stopped','Signed & Authorized'];
 
   return `<div class="tbl-wrap"><table>
     <thead>
@@ -4294,7 +4296,18 @@ function auditTable(l, sigMap) {
     <tbody>
       ${l.map(r => {
         const { name: nm, desig } = parseND(r.name);
-        const sig = sigMap[r.role] || sigMap[r.role === 'Safety Officer' ? 'Safety' : r.role];
+        // Prefer the signature closest in time to THIS log row (handles multiple
+        // signatures from the same role across different shifts), fall back to
+        // the simple role lookup for older entries without precise timing.
+        const roleKey = r.role === 'Safety Officer' ? 'Safety' : r.role;
+        let sig = null, bestDiff = Infinity;
+        sigs.forEach(s => {
+          if (!s.hasSignature || !s.signatureData || !s.time) return;
+          if ((s.role||'').toLowerCase() !== (roleKey||'').toLowerCase()) return;
+          const diff = Math.abs(new Date(s.time).getTime() - new Date(r.time).getTime());
+          if (diff < bestDiff && diff < 30000) { bestDiff = diff; sig = s; }
+        });
+        if (!sig) sig = sigMap[roleKey] || sigMap[r.role];
         const hasSig = sig && sig.hasSignature && sig.signatureData;
         const isSignAction = SIG_ACTIONS.some(a => (r.action||'').includes(a));
         return `<tr>
@@ -5693,6 +5706,18 @@ async function initiateClosure() {
   if (!handedOver) { toast('Please confirm work area handover to originator','err'); return; }
   const comments = document.getElementById('sec8-comments')?.value||'';
   const errEl = document.getElementById('sec8-err');
+  errEl.style.display='none';
+  // Instant client-side check — every Active shift needs Work Stop recorded first
+  const _exNow = (_currentPermitView && _currentPermitView.permitNo===no) ? (_currentPermitView.extras||{}) : null;
+  if (_exNow) {
+    const openShifts = (_exNow.shifts||[]).filter(s=>s.shiftStatus==='Active');
+    if (openShifts.length) {
+      const labels = openShifts.map(s=>'Shift '+(s.shiftNo||'?')+' ('+(s.date||'')+' '+(s.shift||'')+')').join(', ');
+      errEl.textContent = '❌ Cannot close — Work Stop not recorded for: '+labels+'. Job Performer must scan Work Stop in the Scanner app first.';
+      errEl.style.display='block';
+      return;
+    }
+  }
   load(true,'Initiating closure…');
   try {
     await api('closePermit', { permitNo: no, jobStatus, comments, action: 'initiate' });
@@ -5777,19 +5802,29 @@ function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
     const hBg    = cancelled?'#f1f5f9':done?'#dcfce7':active?'#dbeafe':'#fef3c7';
     const hCl    = cancelled?'#64748b':done?'#14532d':active?'#1d4ed8':'#92400e';
 
-    const acceptorSig = findShiftSig(sigs, 'Acceptor', sh.acceptorSignTime);
-    const safetySig    = findShiftSig(sigs, 'Safety',   sh.safetySignTime);
-    const dutySig       = findShiftSig(sigs, 'Duty',     sh.dutyOfficerSignTime);
+    const originatorSig = findShiftSig(sigs, 'Originator', sh.originatorSignTime);
+    const acceptorSig   = findShiftSig(sigs, 'Acceptor',   sh.acceptorSignTime);
+    const safetySig     = findShiftSig(sigs, 'Safety',     sh.safetySignTime);
+    const dutySig       = findShiftSig(sigs, 'Duty',       sh.dutyOfficerSignTime);
 
     const workerAcked = (sh.workerAckCount||0) >= (sh.workerAckTotal||0) && (sh.workerAckTotal||0) > 0;
+    // Duty Officer chip only appears when it was actually invoked for this shift
+    // (Safety approved after-hours), not for every shift unconditionally.
+    const dutyOfficerApplicable = !!sh.dutyOfficerSignTime || sh.shiftStatus === 'Pending Duty Officer';
+
     const steps = [
+      {icon:'📝', label:'Originator', done:!!sh.originatorSignTime, detail:esc(sh.originatorName||'—'), time:sh.originatorSignTime||'', sig:originatorSig},
       {icon:'✍', label:'Worker Ack', done:workerAcked, detail:(sh.workerAckCount||0)+'/'+(sh.workerAckTotal||0)+' acked', time:'', sig:null},
       {icon:'🏭', label:'Acceptor',   done:!!sh.acceptorSignTime,   detail:esc(sh.acceptorName||'—'),  time:sh.acceptorSignTime||'', sig:acceptorSig},
       {icon:'🛡️', label:'Safety',    done:!!sh.safetySignTime,     detail:esc(sh.safetyName||'—'),    time:sh.safetySignTime||'', sig:safetySig},
-      {icon:'👔', label:'Duty Ofcr', done:!!sh.dutyOfficerSignTime, detail:sh.dutyOfficerSignTime?esc(sh.dutyOfficerName||'—'):'—', time:sh.dutyOfficerSignTime||'', sig:dutySig},
-      {icon:'▶',  label:'Start',     done:!!sh.jobStartTime,  detail:sh.jobStartTime?fd(sh.jobStartTime):'',  time:'', sig:null},
-      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?(fd(sh.jobStopTime)+(sh.autoStoppedBySystem?' ⚙':'')):'',    time:'', sig:null},
     ];
+    if (dutyOfficerApplicable) {
+      steps.push({icon:'👔', label:'Duty Ofcr', done:!!sh.dutyOfficerSignTime, detail:sh.dutyOfficerSignTime?esc(sh.dutyOfficerName||'—'):'—', time:sh.dutyOfficerSignTime||'', sig:dutySig});
+    }
+    steps.push(
+      {icon:'▶',  label:'Start',     done:!!sh.jobStartTime,  detail:sh.jobStartTime?fd(sh.jobStartTime):'',  time:'', sig:null},
+      {icon:'⏹', label:'Stop',      done:!!sh.jobStopTime,   detail:sh.jobStopTime?(fd(sh.jobStopTime)+(sh.autoStoppedBySystem?' ⚙':'')):'',    time:'', sig:null}
+    );
     const stepHtml = steps.map(function(s) {
       const visual = (s.sig && s.sig.signatureData)
         ? '<img src="'+s.sig.signatureData+'" style="height:20px;max-width:90%;object-fit:contain;display:block;margin:0 auto">'
@@ -5820,7 +5855,7 @@ function renderShiftsTimeline(shifts, ex, sigs, gasTests, permitNo) {
         +'<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.08);color:'+hCl+'">'+esc(sh.shiftStatus||'Pending')+'</span>'
       +'</div>'
       +'<div style="padding:12px 14px">'
-        +'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-bottom:12px">'+stepHtml+'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat('+steps.length+',1fr);gap:5px;margin-bottom:12px">'+stepHtml+'</div>'
         +'<div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:5px;text-transform:uppercase">Workers ('+(sh.workers||[]).length+')</div>'
         +(sh.autoStoppedBySystem ? '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;margin-bottom:10px;font-size:11px;color:#9a3412"><span style="font-size:15px">⚙️</span><div><strong>Auto-stopped by system</strong> — Job Performer did not record Work Stop before the shift end time ('+fd(sh.autoStopTime)+').</div></div>' : '')
         +(cancelled ? '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;font-size:11px;color:#475569"><span style="font-size:15px">🚫</span><div><strong>Cancelled</strong> by '+esc(sh.cancelledBy||'—')+' — '+esc(sh.cancelReason||'No reason given')+'<br><span style="opacity:.7">'+fd(sh.cancelledAt)+'</span></div></div>' : '')
